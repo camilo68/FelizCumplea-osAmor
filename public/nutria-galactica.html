@@ -1,12 +1,13 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Pingüino Galáctico</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="description" content="Una huella que se escanea con el dedo, una galaxia que nace de ella, un pingüino guía y un final con explosión de partículas.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
 <style>
 /* Concepto: un solo escenario WebGL a pantalla completa. Todas las partículas nacen de una huella, forman la galaxia, y al final estallan para formar un corazón. La interfaz es mínima y flota encima. */
-@font-face{font-family:'Great Vibes';src:url('fonts/great-vibes.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Great Vibes';src:url('/fonts/great-vibes.woff2') format('woff2');font-weight:400;font-display:swap}
 :root{
   --space-0:#05010b;
   --space-1:#14061f;
@@ -249,7 +250,7 @@ body.show-brand #brand{opacity:1;transform:none}
 
 <audio id="song" preload="none"></audio>
 
-<script src="vendor/three.min.js"></script>
+<script src="/vendor/three.min.js"></script>
 <script>
 (() => {
 'use strict';
@@ -1080,7 +1081,7 @@ function startSong() {
   songTimer = setTimeout(() => stopSong(true), Math.max(12000, lyrics.length * 3600 + 1600));
   ensureSongAnalyser();
   try {
-    songEl.src = 'cancion.mp3';
+    songEl.src = '/cancion.mp3';
     songEl.currentTime = 0;
     songEl.volume = 0.95;
     songEl.muted = muted;

@@ -1,27 +1,1500 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#05060f" />
-    <meta name="color-scheme" content="dark" />
-    <meta name="robots" content="noindex, nofollow" />
-    <meta
-      name="description"
-      content="Un corazón de partículas late dentro de una galaxia 3D. Frases de amor en órbita, una carta y un universo entero para Karen."
-    />
-    <meta property="og:type" content="website" />
-    <meta property="og:locale" content="es_ES" />
-    <meta property="og:title" content="TE AMO ❤️ · Corazón Galáctico" />
-    <meta
-      property="og:description"
-      content="Toca el corazón: nace una galaxia con un corazón de partículas y todo lo que siento por ti girando alrededor."
-    />
-    <title>TE AMO ❤️ · Corazón Galáctico</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Pingüino Galáctico</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="description" content="Una huella que se escanea con el dedo, una galaxia que nace de ella, un pingüino guía y un final con explosión de partículas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* Concepto: un solo escenario WebGL a pantalla completa. Todas las partículas nacen de una huella, forman la galaxia, y al final estallan para formar un corazón. La interfaz es mínima y flota encima. */
+@font-face{font-family:'Great Vibes';src:url('/fonts/great-vibes.woff2') format('woff2');font-weight:400;font-display:swap}
+:root{
+  --space-0:#05010b;
+  --space-1:#14061f;
+  --ink:#fff4f8;
+  --ink-dim:#d9c3e6;
+  --rose:#ff4d8d;
+  --violet:#9b6bff;
+  --paper:#fff4fa;
+  --paper-ink:#3b1530;
+  --glass:rgba(255,255,255,.09);
+  --glass-line:rgba(255,255,255,.22);
+  --font-ui:'Fredoka','Nunito','Segoe UI',system-ui,sans-serif;
+  --font-script:'Dancing Script','Great Vibes','Brush Script MT','Segoe Script',cursive;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--space-0);color:var(--ink);font-family:var(--font-ui);
+  touch-action:none;user-select:none;-webkit-user-select:none;
+}
+canvas#gl{position:fixed;inset:0;width:100%;height:100%;display:block;background:radial-gradient(ellipse at 50% 45%,#2a0f4d 0%,var(--space-1) 55%,var(--space-0) 100%)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid #fff;outline-offset:3px}
+
+/* título final */
+#brand{
+  position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 14px);text-align:center;z-index:5;pointer-events:none;
+  font-family:var(--font-script);font-weight:700;font-size:clamp(2.2rem,7vw,3.8rem);line-height:1.1;letter-spacing:.01em;
+  text-shadow:0 0 18px rgba(255,77,141,.9),0 0 44px rgba(255,77,141,.5);
+  opacity:0;transform:translateY(-14px);transition:opacity 1.4s,transform 1.4s;
+}
+body.show-brand #brand{opacity:1;transform:none}
+
+/* botones */
+.chip{
+  display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 18px;border-radius:999px;
+  background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  font-size:15px;font-weight:500;transition:transform .15s,background .2s,opacity .3s;
+}
+.chip:hover{background:rgba(255,255,255,.16)}
+.chip:active{transform:scale(.95)}
+#mute{position:fixed;z-index:35;top:calc(env(safe-area-inset-top,0px) + 12px);right:max(12px,env(safe-area-inset-right,0px));width:44px;padding:0;justify-content:center;font-size:18px}
+#bar{
+  position:fixed;z-index:20;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));
+  bottom:calc(env(safe-area-inset-bottom,0px) + 16px);display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+}
+#bar [hidden]{display:none}
+
+/* globo del pingüino */
+#bubble{
+  position:fixed;left:0;top:0;z-index:15;width:min(344px,calc(100vw - 32px));padding:14px 18px 14px;border-radius:22px;
+  background:var(--paper);color:var(--paper-ink);box-shadow:0 10px 44px rgba(255,77,141,.4);
+  opacity:0;visibility:hidden;pointer-events:none;transition:opacity .35s,visibility .35s;will-change:transform;
+}
+#bubble.show{opacity:1;visibility:visible;pointer-events:auto}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#bubble::after{
+  content:"";position:absolute;left:var(--tx,50%);bottom:-8px;width:18px;height:18px;background:var(--paper);
+  transform:translateX(-50%) rotate(45deg);border-radius:3px;
+}
+#bubble .who{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#c2306b;margin-bottom:5px}
+#bubble p{font-size:18px;line-height:1.42;min-height:2.84em;user-select:text;-webkit-user-select:text}
+#bubble .row{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;min-height:38px}
+.pill{
+  min-height:38px;padding:0 16px;border-radius:999px;border:0;font-weight:600;font-size:15px;
+  background:linear-gradient(135deg,#ff4d8d,#c2306b);color:#fff;box-shadow:0 4px 14px rgba(194,48,107,.45);
+}
+.pill.ghost{background:transparent;color:#8a4a6c;box-shadow:none}
+
+/* escáner de huella */
+#scan{position:fixed;inset:0;z-index:30;pointer-events:none;transition:opacity 1.2s,visibility 1.2s}
+#scan.gone{opacity:0;visibility:hidden}
+#scanTitle{
+  position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 26px);text-align:center;padding-inline:24px;
+  font-family:var(--font-script);font-weight:700;font-size:clamp(2.1rem,7vw,3.4rem);line-height:1.1;text-wrap:balance;
+  text-shadow:0 0 20px rgba(255,77,141,.9),0 0 48px rgba(255,77,141,.5);
+}
+#scanner{
+  position:absolute;left:50%;top:50%;width:calc(var(--sw,300) * 1px);height:calc(var(--sh,400) * 1px);transform:translate(-50%,-50%);
+  border-radius:50%;pointer-events:auto;cursor:pointer;touch-action:none;border:1px dashed rgba(255,255,255,.28);
+  transition:box-shadow .3s,border-color .3s;
+}
+#scanner.holding{border-color:rgba(255,120,170,.85);box-shadow:0 0 56px rgba(255,77,141,.5),inset 0 0 44px rgba(255,77,141,.2)}
+#ringProg{
+  position:absolute;inset:-7px;border-radius:50%;--p:0;pointer-events:none;
+  background:conic-gradient(#ff6aa3 calc(var(--p) * 1%),transparent 0);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));
+  mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));
+  filter:drop-shadow(0 0 6px #ff4d8d);
+}
+#scanHint{
+  position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);text-align:center;padding-inline:24px;
+  font-size:19px;line-height:1.4;color:var(--ink);text-shadow:0 2px 14px rgba(0,0,0,.7);
+}
+#scanHint small{display:block;font-size:14px;color:var(--ink-dim);margin-top:4px}
+#scanFail{position:absolute;left:0;right:0;top:50%;text-align:center;padding-inline:24px;font-size:17px;color:var(--ink-dim)}
+
+#flash{
+  position:fixed;inset:0;z-index:25;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at 50% 50%,#fff 0%,rgba(255,170,210,.9) 32%,rgba(255,77,141,0) 75%);
+}
+#caption{
+  position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 80px);text-align:center;z-index:12;pointer-events:none;
+  padding-inline:max(22px,env(safe-area-inset-left,0px)) max(22px,env(safe-area-inset-right,0px));
+  font-family:var(--font-script);font-weight:700;font-size:clamp(1.6rem,5.2vw,2.5rem);line-height:1.2;text-wrap:balance;
+  text-shadow:0 0 18px rgba(255,77,141,.95),0 0 40px rgba(255,77,141,.5);opacity:0;transition:opacity 1.8s;
+}
+#caption.show{opacity:1}
+
+/* serenata */
+#serenade{
+  position:fixed;z-index:18;left:50%;top:calc(env(safe-area-inset-top,0px) + 70px);width:min(460px,calc(100vw - 38px));
+  padding:14px 18px 12px;border-radius:22px;background:linear-gradient(160deg,rgba(32,9,48,.9),rgba(18,5,30,.74));
+  border:1px solid var(--glass-line);box-shadow:0 14px 46px rgba(0,0,0,.4);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  transform:translate(-50%,12px) scale(.97);text-align:center;opacity:0;visibility:hidden;transition:opacity .4s,transform .4s,visibility .4s;pointer-events:none;
+}
+#serenade.show{opacity:1;visibility:visible;transform:translate(-50%,0) scale(1)}
+#serenade .songWho{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#ffc2dd;text-shadow:0 1px 10px rgba(0,0,0,.6)}
+#lyricLine{
+  font-family:var(--font-script);font-weight:700;font-size:clamp(1.7rem,6.2vw,2.6rem);line-height:1.25;min-height:2.5em;margin:6px 0 12px;
+  color:#fff;text-shadow:0 0 18px rgba(255,77,141,.95),0 0 44px rgba(255,77,141,.55);transition:opacity .3s;
+}
+#songBars{display:flex;justify-content:center;align-items:flex-end;gap:4px;height:22px;margin-bottom:10px}
+#songBars i{display:block;width:4px;border-radius:3px;background:linear-gradient(#ff8ab8,#9b6bff);animation:bars .9s ease-in-out infinite;opacity:.85}
+#songBars i:nth-child(2n){animation-delay:.15s}
+#songBars i:nth-child(3n){animation-delay:.32s}
+#songBars i:nth-child(4n){animation-delay:.46s}
+#songStop{pointer-events:auto;background:rgba(255,255,255,.12);border:1px solid var(--glass-line);color:#fff;box-shadow:none}
+@keyframes bars{0%,100%{height:5px}50%{height:22px}}
+
+/* carta final */
+#modal{
+  position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:20px;
+  background:radial-gradient(ellipse at 50% 30%,rgba(255,77,141,.2),rgba(5,1,11,.66) 68%);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  opacity:0;visibility:hidden;transition:.4s;
+}
+#modal.open{opacity:1;visibility:visible}
+.letter{
+  position:relative;max-width:480px;width:100%;max-height:calc(100dvh - 36px);overflow:auto;padding:62px 30px 26px;border-radius:20px;
+  background:
+    radial-gradient(ellipse at 20% 0%,rgba(255,255,255,.85),transparent 46%),
+    repeating-linear-gradient(0deg,rgba(180,110,140,.055) 0 1px,transparent 1px 28px),
+    linear-gradient(160deg,#fffaf5,#ffeef6 55%,#ffe2ee);
+  color:var(--paper-ink);border:1px solid rgba(224,36,94,.35);
+  box-shadow:0 30px 90px rgba(0,0,0,.58),0 0 0 6px rgba(255,255,255,.05);
+  transform:translateY(30px) scale(.94) rotateX(6deg);transform-origin:50% 100%;
+  transition:transform .6s cubic-bezier(.2,.9,.25,1.15),opacity .5s;opacity:0;
+}
+#modal.open .letter{transform:none;opacity:1}
+.letter::before{content:"";position:absolute;inset:10px;border:1px solid rgba(224,36,94,.16);border-radius:14px;pointer-events:none}
+.letter .seal{
+  position:absolute;top:14px;left:50%;transform:translateX(-50%) rotate(-6deg);width:44px;height:44px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#ff6a9f,#c21e56 60%,#8e123a);display:grid;place-items:center;
+  color:#ffd9e7;font-size:19px;box-shadow:0 6px 18px rgba(142,18,58,.45),inset 0 0 0 2px rgba(255,255,255,.18);
+}
+.letterKicker{text-align:center;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#b4547c;margin-bottom:4px}
+.letter h2{font-family:var(--font-script);font-weight:700;font-size:2.75rem;text-align:center;margin-bottom:12px;color:#8e1f4b;text-shadow:0 1px 0 rgba(255,255,255,.8)}
+#lText{white-space:pre-line;line-height:1.75;font-size:17px;text-align:center;min-height:7em;padding:0 6px;color:#4a1b36;outline:none;user-select:text;-webkit-user-select:text}
+.sign{margin-top:18px;text-align:right;font-family:var(--font-script);font-size:1.9rem;line-height:1.05;color:#8e1f4b}
+.sign span{display:block;font-size:2.3rem}
+.letterActions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:20px}
+.letterActions .pill{font-size:14px;min-height:42px}
+.letter small{display:block;margin-top:14px;text-align:center;color:#a26884;opacity:.8;font-size:12px}
+#close{position:absolute;top:10px;right:10px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(142,31,75,.1);color:#8e1f4b;font-size:16px}
+#close:hover{background:rgba(142,31,75,.18)}
+@media (max-width:520px){
+  #brand{font-size:clamp(1.7rem,7vw,2.6rem);padding-inline:54px;line-height:1.08}
+  .letter{padding:58px 23px 22px;border-radius:18px}
+  .letter .seal{top:10px;width:40px;height:40px;font-size:17px}
+  .letter h2{font-size:2.35rem;margin-bottom:8px}
+  #lText{font-size:16px;line-height:1.65;min-height:5em}
+  .sign{font-size:1.7rem;margin-top:14px}
+  .sign span{font-size:2rem}
+  .letterActions{margin-top:14px}
+  .letter small{margin-top:10px}
+}
+</style>
+
+<canvas id="gl" aria-label="Galaxia 3D que nace de una huella"></canvas>
+
+<h2 id="brand"></h2>
+<button class="chip" id="mute" aria-label="Silenciar sonido">🔊</button>
+
+<div id="scan">
+  <h1 id="scanTitle"></h1>
+  <div id="scanner" role="button" tabindex="0" aria-label="Mantén presionado para escanear la huella">
+    <div id="ringProg"></div>
+  </div>
+  <p id="scanHint"></p>
+  <p id="scanFail" hidden></p>
+</div>
+
+<div id="live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+<div id="bubble">
+  <div class="who" id="who"></div>
+  <p id="say"></p>
+  <div class="row">
+    <button class="pill ghost" id="skipMsg" type="button">Siguiente ›</button>
+    <button class="pill" id="singBtn" type="button" hidden>🎵 Escúchame cantar</button>
+    <button class="pill" id="openLetter" type="button" hidden>💌 Abrir mi carta</button>
+  </div>
+</div>
+
+<p id="caption"></p>
+<div id="flash"></div>
+
+<div id="serenade" aria-live="polite">
+  <p class="songWho">Pingu te canta</p>
+  <p id="lyricLine"></p>
+  <div id="songBars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <button class="pill" id="songStop" type="button">Saltar canción ›</button>
+</div>
+
+<div id="bar">
+  <button class="chip" id="skip" type="button" hidden>Saltar recorrido</button>
+  <button class="chip" id="again" type="button" hidden>↻ Volver a empezar</button>
+  <button class="chip" id="mail" type="button" hidden>💌 Carta</button>
+  <label class="chip" id="photoBtn" for="file" hidden>📷 Fotos de la galaxia</label>
+  <input type="file" id="file" accept="image/*" multiple hidden>
+</div>
+
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="lTitle">
+  <div class="letter">
+    <button id="close" type="button" aria-label="Cerrar carta">✕</button>
+    <div class="seal" aria-hidden="true">♥</div>
+    <p class="letterKicker">Del otro lado de las estrellas</p>
+    <h2 id="lTitle"></h2>
+    <p id="lText" contenteditable="true" spellcheck="false"></p>
+    <p class="sign">Con todo mi amor,<span>Camilo</span></p>
+    <div class="letterActions">
+      <button class="pill ghost" id="againLetter" type="button">↻ Desde el inicio</button>
+      <button class="pill" id="closeLetter" type="button">Cerrar y ver la galaxia</button>
+    </div>
+    <small>Toca el texto para escribir tu propio mensaje</small>
+  </div>
+</div>
+
+<audio id="song" preload="none"></audio>
+
+<script src="/vendor/three.min.js"></script>
+<script>
+(() => {
+'use strict';
+
+/* ================= CONFIGURACIÓN: cambia aquí tus textos ================= */
+const CONFIG = {
+  guide: 'Pingu',
+  title: 'Feliz Cumpleaños, Karen 💗',
+  scanTitle: 'Pon tu dedo para entrar',
+  caption: 'Mi Mamacita Hermosa, esto es todo para ti. 💗',
+  phrases: [
+    'Eres mi universo', 'Te amo hasta las estrellas', 'Contigo todo brilla', 'Mi corazón es tuyo',
+    'Eres mi lugar favorito', 'Nuestro amor es infinito', 'Te elegiría en todas las galaxias',
+    'Gracias por existir', 'Eres mi razón de sonreír', 'Siempre tú', 'Mi estrella favorita', 'Amarte es fácil'
+  ],
+  stops: [
+    { say: ['¡Hola, mi Mamacita Hermosa! 🐧', 'Soy Pingu. Nací de tu huella, así que esta galaxia es toda tuya.', 'Cuando quieras, te llevo a pasear por ella. ✨'], pose: 'wave' },
+    { say: ['Estas estrellas giran despacio, brazo por brazo.', 'Cada una es un momento tuyo que guardo conmigo.'] },
+    { say: ['Mira cómo flotan las frases a nuestro alrededor.', 'Son todos los “te amo” que no caben en una sola vez.'] },
+    { say: ['Y aquí giran los recuerdos, como pequeñas lunas.', 'Cada recuerdo es una estrella más en este cielo.'] },
+    { say: ['En el centro de todo está el corazón de esta galaxia.', 'Late por ti, a cada segundo.'], pose: 'heart' },
+    {
+      say: ['Antes de irme, traje algo para ti.', 'Una carta escrita con todo el cariño del universo. 💌', 'Pero antes… quiero cantarte algo. 🎵'],
+      pose: 'present', song: true, letter: true,
+      postSong: 'Y ahora sí… mi carta es toda tuya. Ábrela. 💌'
+    }
+  ],
+  letterTitle: 'Para Karen',
+  letter: 'Mi Mamacita Hermosa:\n\nSi pudiera elegir un lugar en todo el universo, elegiría el que ocupas en mi vida. Gracias por cada mensaje, cada risa y cada momento que guardamos, incluso a la distancia.\n\nHoy celebro que existes, que iluminas todo a tu paso y que haces que hasta las galaxias se vean pequeñas. Te amo hoy, mañana y en todas las vidas que nos queden por vivir. 💗',
+  /* Para usar la canción elegida, coloca el archivo en public/cancion.mp3.
+     Si no existe, Pingu canta sobre la cajita de música romántica. */
+  song: {
+    title: 'Para ti, mi Mamacita Hermosa',
+    lyrics: [
+      'Si la noche se hace larga,',
+      'yo te canto desde aquí…',
+      'cada estrella es un “te quiero”',
+      'que guardé para ti. 💗',
+      'Duerme tranquila, mi amor,',
+      'que mañana te escribo otra vez. ✨'
+    ]
+  }
+};
+
+/* Ruta del pingüino. Cada punto es [x, y, z]; "stop" enlaza con CONFIG.stops. */
+const WAY = [
+  { p: [30, 9, 44], stop: 1 },
+  { p: [52, 6, 18] },
+  { p: [50, 3, -18] },
+  { p: [30, 4, -44], stop: 2 },
+  { p: [-8, 9, -48] },
+  { p: [-38, 5, -26] },
+  { p: [-34, 4, 3], stop: 3 },
+  { p: [-26, 9, 28] },
+  { p: [-4, 6, 34] },
+  { p: [12, 2, 21], stop: 4 },
+  { p: [5, 5, 15] },
+  { p: [-3, 1.5, 15], stop: 5 }
+];
+
+/* Tiempos de cada fase, en segundos */
+const SCAN_HOLD = 3.2, FORM_T = 8.5, BOOM_T = 1.5, FINAL_READY = 3.2;
+/* ========================================================================= */
+
+const TAU = Math.PI * 2;
+const $ = s => document.querySelector(s);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const damp = (rate, dt) => 1 - Math.exp(-rate * dt);
+const gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const easeIO = x => 0.5 - 0.5 * Math.cos(Math.PI * clamp(x, 0, 1));
+const EDIT = location.hash === '#editar';
+const INTRO_POS = new THREE.Vector3(0, 2.0, 4.5);
+const INTRO_CAM = new THREE.Vector3(4.2, 3.35, 10.2);
+const INTRO_LOOK = new THREE.Vector3(0, 2.35, 4.2);
+
+$('#brand').textContent = CONFIG.title;
+$('#scanTitle').textContent = CONFIG.scanTitle;
+$('#who').textContent = CONFIG.guide;
+$('#lTitle').textContent = CONFIG.letterTitle;
+$('#lText').textContent = CONFIG.letter;
+$('#caption').textContent = CONFIG.caption;
+
+function failScreen(msg) { const f = $('#scanFail'); f.hidden = false; f.textContent = msg; $('#scanner').style.display = 'none'; $('#scanHint').textContent = ''; }
+if (typeof THREE === 'undefined') { failScreen('No se pudo cargar. Revisa tu conexión y vuelve a abrir la página.'); return; }
+
+/* ---------------- renderer, escena, cámara ---------------- */
+const canvas = $('#gl');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+} catch (err) { failScreen('Tu navegador no admite 3D. Prueba con otro o activa la aceleración por hardware.'); return; }
+renderer.setClearColor(0x000000, 0);
+renderer.outputEncoding = THREE.sRGBEncoding;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 900);
+const SCAN_Z = 60;
+
+/* uniformes compartidos por todos los sistemas de partículas */
+const U = {
+  uTime: { value: 0 }, uGalTime: { value: 0 }, uScale: { value: 600 },
+  uForm: { value: 0 }, uBoom: { value: 0 }, uProg: { value: 0 }, uScanY: { value: 0 }
+};
+
+function resize() {
+  const w = innerWidth, h = innerHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+  renderer.setPixelRatio(dpr);
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.fov = w / h < 1 ? 55 + (1 - w / h) * 34 : 55;
+  camera.updateProjectionMatrix();
+  U.uScale.value = h * dpr / (2 * Math.tan(camera.fov * Math.PI / 360));
+  const ppu = h / (2 * SCAN_Z * Math.tan(camera.fov * Math.PI / 360));
+  const sc = $('#scanner'); sc.style.setProperty('--sw', (27.5 * ppu).toFixed(1)); sc.style.setProperty('--sh', (36.5 * ppu).toFixed(1));
+}
+
+scene.add(new THREE.HemisphereLight(0xffdcee, 0x3a1a66, 0.95));
+const key = new THREE.DirectionalLight(0xfff1f6, 0.85); key.position.set(20, 32, 26); scene.add(key);
+const pinkLight = new THREE.PointLight(0xff4d8d, 1.3, 70); pinkLight.position.set(0, 0, 8); scene.add(pinkLight);
+
+/* ---------------- utilidades ---------------- */
+function glowTex(r, g, b) {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const x = c.getContext('2d'), gr = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, `rgba(${r},${g},${b},.9)`); gr.addColorStop(0.35, `rgba(${r},${g},${b},.25)`); gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+  x.fillStyle = gr; x.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+}
+function glowSprite(rgb, size, opacity) {
+  const m = new THREE.SpriteMaterial({ map: glowTex(rgb[0], rgb[1], rgb[2]), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity });
+  const s = new THREE.Sprite(m); s.scale.set(size, size, 1); s.userData.base = opacity; return s;
+}
+function palette(stops, u) {
+  const n = stops.length - 1, p = clamp(u * n, 0, n - 1e-6), i = Math.floor(p), f = p - i;
+  const a = stops[i], b = stops[i + 1];
+  return [lerp(a[0], b[0], f), lerp(a[1], b[1], f), lerp(a[2], b[2], f)];
+}
+function addAttr(geo, name, arr, size) { const a = new THREE.BufferAttribute(arr, size); geo.setAttribute(name, a); return a; }
+
+/* ---------------- huella: puntos sobre crestas ---------------- */
+const RIDGES = 17;
+const ridgeCum = []; let ridgeTot = 0;
+for (let k = 0; k < RIDGES; k++) { ridgeTot += 1.1 + k; ridgeCum.push(ridgeTot); }
+function printPoint(out, o) {
+  for (let tries = 0; tries < 16; tries++) {
+    const u = Math.random() * ridgeTot; let k = 0; while (ridgeCum[k] < u) k++;
+    const r0 = 1.1 + k, th = Math.random() * TAU;
+    const warp = 1 + 0.05 * Math.sin(2 * th + 1.3 + k * 0.28) + 0.035 * Math.sin(4 * th - k * 0.5) + 0.02 * Math.sin(7 * th + k);
+    if (Math.sin(th * 3 + k * 1.7) + Math.sin(th * 5 - k * 2.3) > 1.55) continue;
+    const r = r0 * warp + gauss() * 0.13;
+    const x = Math.cos(th) * r * 0.78, y = Math.sin(th) * r - k * 0.1;
+    if ((x / 13.4) * (x / 13.4) + (y / 17.6) * (y / 17.6) > 1) continue;
+    out[o] = x; out[o + 1] = y; out[o + 2] = gauss() * 0.04; return;
+  }
+  out[o] = gauss() * 0.4; out[o + 1] = gauss() * 0.4; out[o + 2] = 0;
+}
+
+/* ---------------- shader común: huella → galaxia → explosión → renacer ---------------- */
+const COMMON = `
+  uniform float uTime, uGalTime, uScale, uForm, uBoom, uProg, uScanY;
+  attribute vec3 aMisc;   // x: tamaño, y: semilla, z: retraso de formación
+  attribute vec3 aColor, aStart;
+  varying vec3 vColor; varying float vAlpha;
+  float ease(float t){ return t * t * (3.0 - 2.0 * t); }
+  float h11(float n){ return fract(sin(n * 91.345) * 47453.5453); }
+  vec3 run(vec3 fin, out float sz){
+    float seed = aMisc.y, delay = aMisc.z;
+    float t = clamp((uForm - delay * 0.5) / 0.5, 0.0, 1.0), e = ease(t);
+    vec3 d = fin - aStart;
+    vec3 side = normalize(cross(d, vec3(0.0, 1.0, 0.0)) + vec3(0.0001));
+    vec3 p = mix(aStart, fin, e) + side * sin(e * 3.14159) * (seed - 0.5) * 14.0;
+    float b = 1.0 - pow(1.0 - uBoom, 3.0);
+    vec3 dir = normalize(vec3(h11(seed * 13.1) - 0.5, h11(seed * 29.7) - 0.5, h11(seed * 57.3) - 0.5) + vec3(0.0001));
+    vec3 radial = normalize(p + vec3(0.001));
+    p += (radial * 0.6 + dir * 0.4) * b * (25.0 + 85.0 * h11(seed * 7.7));
+    vec3 col = mix(vec3(1.0, 0.72, 0.88), aColor, e);
+    float sc = (1.0 - smoothstep(0.0, 2.2, abs(aStart.y - uScanY))) * uProg * (1.0 - uForm);
+    col += vec3(0.7, 0.45, 0.6) * sc;
+    vColor = col;
+    float a0 = (mix(0.13, 0.46, uProg) + sc * 0.5) * (0.82 + 0.18 * sin(uTime * 2.0 + seed * 6.28));
+    vAlpha = mix(a0, 0.95, e);
+    sz = mix(0.17, aMisc.x, e);
+    return p;
+  }`;
+const POINT_FRAG = `
+  varying vec3 vColor; varying float vAlpha;
+  void main(){
+    float d = length(gl_PointCoord - 0.5);
+    float a = smoothstep(0.5, 0.0, d);
+    gl_FragColor = vec4(vColor, a * a * vAlpha);
+  }`;
+function pointsMat(vertexBody, extraUniforms, extraDecl) {
+  return new THREE.ShaderMaterial({
+    uniforms: Object.assign({}, U, extraUniforms || {}),
+    vertexShader: COMMON + (extraDecl || '') + `void main(){ float sz; ${vertexBody}
+      vec4 mv = modelViewMatrix * vec4(p, 1.0);
+      gl_Position = projectionMatrix * mv;
+      gl_PointSize = clamp(sz * uScale / -mv.z, 0.0, 16.0);
+    }`,
+    fragmentShader: POINT_FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+  });
+}
+
+/* ---------------- fondo de estrellas ---------------- */
+const bgMat = (() => {
+  const N = 1800, pos = new Float32Array(N * 3), ph = new Float32Array(N), sz = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const u = Math.random() * 2 - 1, a = Math.random() * TAU, s = Math.sqrt(1 - u * u), r = 420;
+    pos[i * 3] = Math.cos(a) * s * r; pos[i * 3 + 1] = u * r; pos[i * 3 + 2] = Math.sin(a) * s * r;
+    ph[i] = Math.random() * TAU; sz[i] = 0.5 + Math.random() * 1.1;
+  }
+  const g = new THREE.BufferGeometry();
+  addAttr(g, 'position', pos, 3); addAttr(g, 'aPhase', ph, 1); addAttr(g, 'aSize', sz, 1);
+  const m = new THREE.ShaderMaterial({
+    uniforms: { uTime: U.uTime, uScale: U.uScale },
+    vertexShader: `
+      attribute float aPhase; attribute float aSize; uniform float uTime; uniform float uScale;
+      varying vec3 vColor; varying float vAlpha;
+      void main(){
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = clamp(aSize * uScale / -mv.z * 1.4, 1.0, 5.0);
+        vColor = vec3(1.0, 0.95, 1.0);
+        vAlpha = 0.35 + 0.65 * (0.5 + 0.5 * sin(uTime * 1.3 + aPhase * 3.0));
+      }`,
+    fragmentShader: POINT_FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+  });
+  const p = new THREE.Points(g, m); p.frustumCulled = false; scene.add(p);
+  return m;
+})();
+
+/* ---------------- galaxia ---------------- */
+const GAL_R = 72, GAL_N = 34000, HEART_N = 9000;
+{
+  const N = GAL_N, ARMS = 3, TWIST = 5.0;
+  const gal = new Float32Array(N * 4), misc = new Float32Array(N * 3), col = new Float32Array(N * 3), start = new Float32Array(N * 3);
+  const stops = [[1, .94, .88], [1, .59, .78], [.75, .4, 1], [.35, .31, .9]];
+  for (let i = 0; i < N; i++) {
+    const arm = i % ARMS, u = Math.pow(Math.random(), 0.7), r = 3 + u * GAL_R, spread = 0.5 * (1 - u) + 0.12;
+    gal[i * 4] = r; gal[i * 4 + 1] = arm * TAU / ARMS + u * TWIST + gauss() * spread;
+    gal[i * 4 + 2] = gauss() * 3.2 * (1 - u * 0.7); gal[i * 4 + 3] = 0.3 / (1 + r / 16);
+    misc[i * 3] = (0.12 + Math.random() * 0.32 * (1 - u * 0.4)) * (Math.random() < 0.06 ? 2.2 : 1);
+    misc[i * 3 + 1] = Math.random(); misc[i * 3 + 2] = u * 0.85;
+    const c = palette(stops, u), k = 0.7 + Math.random() * 0.3;
+    col[i * 3] = c[0] * k; col[i * 3 + 1] = c[1] * k; col[i * 3 + 2] = c[2] * k;
+    printPoint(start, i * 3);
+  }
+  const g = new THREE.BufferGeometry();
+  addAttr(g, 'position', new Float32Array(N * 3), 3); addAttr(g, 'aGal', gal, 4); addAttr(g, 'aMisc', misc, 3); addAttr(g, 'aColor', col, 3); addAttr(g, 'aStart', start, 3);
+  const m = pointsMat(`
+    float a = aGal.y + uGalTime * aGal.w;
+    vec3 fin = vec3(cos(a) * aGal.x, aGal.z, sin(a) * aGal.x);
+    vec3 p = run(fin, sz);`, null, 'attribute vec4 aGal;');
+  const p = new THREE.Points(g, m); p.frustumCulled = false; scene.add(p);
+}
+const coreGlow = glowSprite([190, 100, 255], 90, 0.42); scene.add(coreGlow);
+
+/* ---------------- corazón de partículas ---------------- */
+const U_HEART = { uBeat: { value: 1 }, uYaw: { value: 0 } };
+{
+  const N = HEART_N, HS = 0.43;
+  const pos = new Float32Array(N * 3), misc = new Float32Array(N * 3), col = new Float32Array(N * 3), start = new Float32Array(N * 3);
+  const stops = [[.78, .08, .27], [1, .27, .5], [1, .59, .75], [1, .88, .92]];
+  for (let i = 0; i < N; i++) {
+    const t = Math.random() * TAU, surf = Math.random() < 0.45;
+    const r = surf ? 1 - Math.random() * 0.04 : Math.pow(Math.random(), 0.45);
+    const hx = 16 * Math.pow(Math.sin(t), 3);
+    const hy = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+    pos[i * 3] = hx * r * HS; pos[i * 3 + 1] = (hy + 2.5) * r * HS; pos[i * 3 + 2] = gauss() * 7 * (1.05 - r * 0.5) * HS;
+    misc[i * 3] = 0.25 + Math.random() * 0.4; misc[i * 3 + 1] = Math.random(); misc[i * 3 + 2] = 0.78 + Math.random() * 0.22;
+    const c = palette(stops, Math.pow(Math.random(), 0.8));
+    col[i * 3] = c[0]; col[i * 3 + 1] = c[1]; col[i * 3 + 2] = c[2];
+    printPoint(start, i * 3);
+  }
+  const g = new THREE.BufferGeometry();
+  addAttr(g, 'position', pos, 3); addAttr(g, 'aMisc', misc, 3); addAttr(g, 'aColor', col, 3); addAttr(g, 'aStart', start, 3);
+  const m = pointsMat(`
+    float ph = aMisc.y * 6.2832;
+    vec3 hp = position + 0.14 * vec3(sin(uTime * 2.1 + ph), cos(uTime * 1.7 + ph), sin(uTime * 1.3 + ph * 2.0));
+    hp *= uBeat;
+    float cy = cos(uYaw), sy = sin(uYaw);
+    vec3 fin = vec3(hp.x * cy + hp.z * sy, hp.y, -hp.x * sy + hp.z * cy);
+    vec3 p = run(fin, sz);`, U_HEART, 'uniform float uBeat; uniform float uYaw;');
+  const p = new THREE.Points(g, m); p.frustumCulled = false; scene.add(p);
+}
+const heartGlow = glowSprite([255, 60, 130], 30, 0.6); scene.add(heartGlow);
+
+/* ---------------- frases y fotos en órbita ---------------- */
+const phraseSprites = [];
+function drawPhrase(c, text) {
+  const x = c.getContext('2d');
+  x.font = '600 64px Fredoka, "Segoe UI", system-ui, sans-serif';
+  const w = Math.ceil(x.measureText(text).width) + 80;
+  c.width = w; c.height = 120;
+  x.font = '600 64px Fredoka, "Segoe UI", system-ui, sans-serif';
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.shadowColor = 'rgba(255,90,160,.95)'; x.shadowBlur = 22; x.fillStyle = '#fff';
+  x.fillText(text, w / 2, 62); x.fillText(text, w / 2, 62);
+}
+CONFIG.phrases.forEach((text, i) => {
+  const c = document.createElement('canvas'); drawPhrase(c, text);
+  const tex = new THREE.CanvasTexture(c);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0 }));
+  s.userData = { i, text, c, tex, aspect: c.width / c.height };
+  s.scale.set(s.userData.aspect * 1.7, 1.7, 1); scene.add(s); phraseSprites.push(s);
+});
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => phraseSprites.forEach(s => {
+    drawPhrase(s.userData.c, s.userData.text); s.userData.tex.dispose();
+    s.userData.tex = new THREE.CanvasTexture(s.userData.c); s.material.map = s.userData.tex; s.material.needsUpdate = true;
+    s.userData.aspect = s.userData.c.width / s.userData.c.height; s.scale.set(s.userData.aspect * 1.7, 1.7, 1);
+  }));
+}
+
+const PH_COLORS = [['#ff7eb3', '#ff758c'], ['#a18cd1', '#fbc2eb'], ['#fad0c4', '#ff9a9e'], ['#89f7fe', '#66a6ff'], ['#fccb90', '#d57eeb'], ['#ffecd2', '#fcb69f']];
+const photos = [], photoSprites = [];
+function drawPolaroid(c, i, img) {
+  c.width = 256; c.height = 320;
+  const x = c.getContext('2d');
+  x.shadowColor = 'rgba(255,100,170,.8)'; x.shadowBlur = 18;
+  x.fillStyle = '#fff'; x.beginPath(); x.roundRect ? x.roundRect(12, 12, 232, 296, 12) : x.rect(12, 12, 232, 296); x.fill();
+  x.shadowBlur = 0;
+  const ix = 26, iy = 26, iw = 204, ih = 218;
+  x.save(); x.beginPath(); x.rect(ix, iy, iw, ih); x.clip();
+  if (img) {
+    const k = Math.max(iw / img.width, ih / img.height), dw = img.width * k, dh = img.height * k;
+    x.drawImage(img, ix + (iw - dw) / 2, iy + (ih - dh) / 2, dw, dh);
+  } else {
+    const cc = PH_COLORS[i % PH_COLORS.length], g = x.createLinearGradient(ix, iy, ix + iw, iy + ih);
+    g.addColorStop(0, cc[0]); g.addColorStop(1, cc[1]); x.fillStyle = g; x.fillRect(ix, iy, iw, ih);
+    x.font = '72px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillStyle = '#fff'; x.fillText('📷', ix + iw / 2, iy + ih / 2);
+  }
+  x.restore();
+  x.fillStyle = '#d4558a'; x.font = '600 24px Fredoka, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText(img ? '♥' : 'tu foto', 128, 278);
+}
+for (let i = 0; i < 8; i++) {
+  const c = document.createElement('canvas'); drawPolaroid(c, i, null);
+  const tex = new THREE.CanvasTexture(c);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0 }));
+  s.scale.set(3.4, 4.25, 1); s.visible = false; s.userData = { i, c, tex }; scene.add(s); photoSprites.push(s);
+}
+function refreshPhotos() {
+  photoSprites.forEach((s, i) => {
+    s.visible = photos.length > 0;
+    drawPolaroid(s.userData.c, i, photos.length ? photos[i % photos.length] : null); s.userData.tex.needsUpdate = true;
+  });
+}
+
+/* ---------------- el pingüino ---------------- */
+function buildPenguin() {
+  const root = new THREE.Group(), rig = new THREE.Group(), squash = new THREE.Group(), model = new THREE.Group();
+  root.add(rig); rig.add(squash); squash.add(model);
+  rig.scale.setScalar(0.82);
+
+  /* medidas del cuerpo: las mismas del estudio que aprobaste */
+  const BODY_A = 0.92, BODY_H = 1.5, BODY_N = 2.45, BODY_Z = 0.88, GROUND = -1.585;
+  squash.position.y = GROUND; model.position.y = -GROUND;
+
+  const C = hex => new THREE.Color(hex).convertSRGBToLinear();
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+
+  /* Superelipse: costados casi rectos, base un poco más ancha que la cabeza. */
+  function profileAt(th) {
+    const c = Math.cos(th), s = Math.sin(th), e = 2 / BODY_N;
+    const taper = 1 - 0.07 * s;
+    return [BODY_A * taper * Math.pow(Math.abs(c), e), BODY_H * (s < 0 ? -1 : 1) * Math.pow(Math.abs(s), e)];
+  }
+  function surfaceZ(y) {
+    let prev = null;
+    for (let j = 0; j <= 400; j++) {
+      const p = profileAt(j / 400 * Math.PI / 2);
+      if (prev && prev[1] <= y && p[1] >= y) {
+        const t = (y - prev[1]) / (p[1] - prev[1]);
+        return (prev[0] + (p[0] - prev[0]) * t) * BODY_Z;
+      }
+      prev = p;
+    }
+    return 0.7;
+  }
+
+  /* textura: negro, barriga y cara blancas, ojos felices cerrados */
+  const SHAPES = [
+    [0, -0.62, 0.80, 0.76],
+    [-0.37, 0.70, 0.38, 0.52],
+    [0.37, 0.70, 0.38, 0.52],
+    [0, 0.36, 0.64, 0.30]
+  ];
+  function sdE(x, y, cx, cy, a, b) {
+    const nx = (x - cx) / a, ny = (y - cy) / b, k = Math.sqrt(nx * nx + ny * ny);
+    const h = Math.sqrt((nx / a) * (nx / a) + (ny / b) * (ny / b));
+    return h < 1e-9 ? -Math.min(a, b) : (k - 1) * k / h;
+  }
+  const cov = (d, aa) => d >= aa / 2 ? 0 : (d <= -aa / 2 ? 1 : 0.5 - d / aa);
+  function whiteCoverage(x, y) {
+    let d = 1e9;
+    for (let k = 0; k < 4; k++) { const s = SHAPES[k], v = sdE(x, y, s[0], s[1], s[2], s[3]); if (v < d) d = v; }
+    return cov(d, 0.012);
+  }
+  function eyeCoverage(x, y) {
+    const cx = x < 0 ? -0.39 : 0.39, cy = 0.565, R = 0.13, lo = 0.436, hi = Math.PI - 0.436;
+    const a = Math.atan2(y - cy, x - cx);
+    const ca = a < lo ? lo : (a > hi ? hi : a);
+    const w = 0.013 + 0.012 * Math.sin((ca - lo) / (hi - lo) * Math.PI);
+    const dx = x - (cx + R * Math.cos(ca)), dy = y - (cy + R * Math.sin(ca));
+    return cov(Math.sqrt(dx * dx + dy * dy) - w, 0.008);
+  }
+  function makeBodyTexture() {
+    const W = 2048, H = 1024;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d'), img = ctx.createImageData(W, H), d = img.data;
+    const K = [21, 23, 29], Wt = [252, 249, 250], E = [17, 18, 24];
+    const rr = new Float32Array(H), yy = new Float32Array(H);
+    for (let j = 0; j < H; j++) { const v = 1 - (j + 0.5) / H, p = profileAt(-Math.PI / 2 + Math.PI * v); rr[j] = p[0]; yy[j] = p[1]; }
+    const sn = new Float32Array(W), fr = new Uint8Array(W);
+    for (let i = 0; i < W; i++) { const a = ((i + 0.5) / W - 0.5) * 2 * Math.PI; sn[i] = Math.sin(a); fr[i] = Math.cos(a) > 0 ? 1 : 0; }
+    for (let j = 0; j < H; j++) {
+      const y = yy[j], r = rr[j];
+      for (let i = 0; i < W; i++) {
+        const o = (j * W + i) * 4;
+        let wm = 0, em = 0;
+        if (fr[i] && y > -1.45) {
+          const x = r * sn[i];
+          wm = whiteCoverage(x, y);
+          if (wm > 0 && y > 0.3 && y < 0.9 && Math.abs(Math.abs(x) - 0.39) < 0.2) em = eyeCoverage(x, y);
+        }
+        let rch = K[0] + (Wt[0] - K[0]) * wm, gch = K[1] + (Wt[1] - K[1]) * wm, bch = K[2] + (Wt[2] - K[2]) * wm;
+        rch = rch * (1 - em) + E[0] * em; gch = gch * (1 - em) + E[1] * em; bch = bch * (1 - em) + E[2] * em;
+        d[o] = rch; d[o + 1] = gch; d[o + 2] = bch; d[o + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.encoding = THREE.sRGBEncoding;
+    tex.anisotropy = maxAniso;
+    return tex;
+  }
+
+  /* materiales */
+  const bodyMat = new THREE.MeshPhysicalMaterial({ map: makeBodyTexture(), roughness: 0.50, metalness: 0, clearcoat: 0.38, clearcoatRoughness: 0.34, envMapIntensity: 0.35 });
+  const blackMat = new THREE.MeshPhysicalMaterial({ color: C(0x15171d), roughness: 0.48, metalness: 0, clearcoat: 0.42, clearcoatRoughness: 0.30, envMapIntensity: 0.38 });
+  const orangeMat = new THREE.MeshPhysicalMaterial({ color: C(0xff9418), roughness: 0.42, metalness: 0, clearcoat: 0.35, clearcoatRoughness: 0.30, envMapIntensity: 0.35 });
+  const mouthMat = new THREE.MeshStandardMaterial({ color: C(0xb81f3a), roughness: 0.6, side: THREE.BackSide });
+  const tongueMat = new THREE.MeshStandardMaterial({ color: C(0xff7d90), roughness: 0.5 });
+
+  /* cuerpo */
+  const NSEG = 96, pts = [];
+  for (let j = 0; j < NSEG; j++) {
+    const p = profileAt(-Math.PI / 2 + Math.PI * j / (NSEG - 1));
+    pts.push(new THREE.Vector2(Math.max(p[0], 1e-4), p[1]));
+  }
+  const body = new THREE.Mesh(new THREE.LatheGeometry(pts, 160), bodyMat);
+  body.scale.set(1, 1, BODY_Z);
+  body.rotation.y = Math.PI;
+  model.add(body);
+
+  /* aletas */
+  const sphere = new THREE.SphereGeometry(1, 40, 28);
+  const wings = [];
+  function makeWing(side) {
+    const pivot = new THREE.Group();
+    pivot.position.set(0.84 * side, 0.15, 0.04);
+    const m = new THREE.Mesh(sphere, blackMat);
+    m.scale.set(0.19, 0.47, 0.12); m.position.y = -0.37; pivot.add(m);
+    pivot.userData = { base: 0.75 * side, side: side };
+    pivot.rotation.z = pivot.userData.base;
+    model.add(pivot); wings.push(pivot);
+  }
+  makeWing(-1); makeWing(1);
+
+  /* patas */
+  const feet = [];
+  function makeFoot(side) {
+    const g = new THREE.Group();
+    g.position.set(0.46 * side, -1.5, 0.36); g.rotation.y = 0.2 * side;
+    const sole = new THREE.Mesh(sphere, orangeMat); sole.scale.set(0.30, 0.085, 0.40); g.add(sole);
+    [-1, 0, 1].forEach(k => {
+      const t = new THREE.Mesh(sphere, orangeMat);
+      t.scale.set(0.105, 0.075, 0.12); t.position.set(k * 0.17, -0.005, 0.37 - Math.abs(k) * 0.05); g.add(t);
+    });
+    model.add(g); feet.push(g);
+  }
+  makeFoot(-1); makeFoot(1);
+
+  /* pico: cúpula superior fija y mandíbula inferior que se abre */
+  const domeGeo = new THREE.SphereGeometry(1, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2);
+  const bowlGeo = new THREE.SphereGeometry(1, 40, 20, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+  const beak = new THREE.Group();
+  beak.position.set(0, 0.47, surfaceZ(0.47) - 0.05);
+  beak.rotation.x = 0.14;
+  model.add(beak);
+  const upper = new THREE.Mesh(domeGeo, orangeMat); upper.scale.set(0.27, 0.13, 0.27); upper.position.z = 0.18; beak.add(upper);
+  const upperIn = new THREE.Mesh(domeGeo, mouthMat); upperIn.scale.set(0.255, 0.115, 0.255); upperIn.position.z = 0.18; beak.add(upperIn);
+  const jaw = new THREE.Group(); beak.add(jaw);
+  const lower = new THREE.Mesh(bowlGeo, orangeMat); lower.scale.set(0.235, 0.09, 0.22); lower.position.z = 0.16; jaw.add(lower);
+  const lowerIn = new THREE.Mesh(bowlGeo, mouthMat); lowerIn.scale.set(0.22, 0.08, 0.205); lowerIn.position.z = 0.16; jaw.add(lowerIn);
+  const tongue = new THREE.Mesh(sphere, tongueMat); tongue.scale.set(0.11, 0.03, 0.11); tongue.position.set(0, -0.03, 0.13); jaw.add(tongue);
+  const JAW_REST = 0.2, JAW_MAX = 0.62;
+  jaw.rotation.x = JAW_REST;
+
+  /* ancla del globo: arriba de la cabeza */
+  const head = new THREE.Group(); head.position.set(0, 0.78, 0.10); model.add(head);
+
+  /* sobre de la carta, flotando delante del pecho */
+  const matCache = {};
+  const mat = (hex, rough, em) => {
+    const k = hex + '_' + rough + '_' + (em || 0);
+    return matCache[k] || (matCache[k] = new THREE.MeshStandardMaterial({
+      color: hex, roughness: rough, metalness: 0,
+      emissive: em ? hex : 0x000000, emissiveIntensity: em || 0
+    }));
+  };
+  const envelope = new THREE.Group();
+  envelope.position.set(0, -0.28, 1.28);
+  envelope.rotation.x = -0.06;
+  envelope.visible = false;
+  model.add(envelope);
+  const envelopeLight = new THREE.PointLight(0xff9ec8, 0, 4.5, 2);
+  envelopeLight.position.set(0, 0, 0.7);
+  envelope.add(envelopeLight);
+  envelope.add(new THREE.Mesh(new THREE.BoxGeometry(1.04, 0.74, 0.045), mat(0xb8275a, 0.55, 0.18)));
+  const face = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.62, 0.05), mat(0xffe9f0, 0.68, 0.22));
+  face.position.z = 0.025; envelope.add(face);
+  const tri = new THREE.Shape(); tri.moveTo(-0.48, 0.33); tri.lineTo(0.48, 0.33); tri.lineTo(0, -0.12); tri.closePath();
+  const flap = new THREE.Mesh(new THREE.ExtrudeGeometry(tri, { depth: 0.03, bevelEnabled: false }), mat(0xff9fbe, 0.55, 0.2));
+  flap.position.z = 0.055; envelope.add(flap);
+  const edges = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(1.04, 0.74, 0.045)),
+    new THREE.LineBasicMaterial({ color: 0x7a163c, transparent: true, opacity: 0.82 })
+  );
+  envelope.add(edges);
+  const lc = document.createElement('canvas'); lc.width = 256; lc.height = 72;
+  const lx = lc.getContext('2d'); lx.clearRect(0, 0, 256, 72);
+  lx.font = 'italic 600 44px Georgia, serif'; lx.textAlign = 'center'; lx.textBaseline = 'middle';
+  lx.fillStyle = '#7a1f42'; lx.fillText('Para ti', 128, 38);
+  const lt = new THREE.CanvasTexture(lc); lt.encoding = THREE.sRGBEncoding;
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.17), new THREE.MeshBasicMaterial({ map: lt, transparent: true, depthWrite: false }));
+  label.position.set(0, -0.245, 0.092); envelope.add(label);
+  const sealBack = new THREE.Mesh(new THREE.CircleGeometry(0.11, 28), mat(0x8e123a, 0.5, 0.3));
+  sealBack.position.set(0, -0.06, 0.075); envelope.add(sealBack);
+  const hs = new THREE.Shape(); hs.moveTo(5, 5); hs.bezierCurveTo(5, 5, 4, 0, 0, 0); hs.bezierCurveTo(-6, 0, -6, 7, -6, 7); hs.bezierCurveTo(-6, 11, -3, 15.4, 5, 19); hs.bezierCurveTo(12, 15.4, 16, 11, 16, 7); hs.bezierCurveTo(16, 7, 16, 0, 10, 0); hs.bezierCurveTo(7, 0, 5, 5, 5, 5);
+  const hg = new THREE.ShapeGeometry(hs); hg.translate(-5, -9.5, 0);
+  const seal = new THREE.Mesh(hg, mat(0xe0185e, 0.35, 0.6)); seal.scale.setScalar(0.0105); seal.position.set(0, -0.06, 0.09); envelope.add(seal);
+
+  const st = { mouth: 0, energy: 0, env: 0 };
+  function update(dt, t, sp, w, pose, envOn, singing, songLevel) {
+    const idle = 0.5 + 0.5 * w;
+
+    /* pico: sigue la voz de la canción, o canta suave si no hay analizador */
+    let target = 0;
+    if (singing) {
+      if (typeof songLevel === 'number') target = songLevel;
+      else {
+        const gate = 0.35 + 0.65 * smooth(-0.25, 0.35, Math.sin(t * 2.3));
+        target = (0.18 + 0.55 * Math.abs(Math.sin(t * 7.4))) * gate;
+      }
+    } else if (pose === 'sing') {
+      target = 0.10 + 0.16 * Math.abs(Math.sin(t * 4.2));
+    }
+    st.mouth += (target - st.mouth) * Math.min(1, dt * (target > st.mouth ? 26 : 13));
+    jaw.rotation.x = JAW_REST + st.mouth * (JAW_MAX - JAW_REST);
+
+    const energyTarget = (singing || pose === 'sing') ? 1 : 0;
+    st.energy += (energyTarget - st.energy) * Math.min(1, dt * 5);
+
+    /* respiración, canto y flotación */
+    const breath = Math.sin(t * 1.7);
+    const sx = 1 - 0.006 * breath - 0.02 * st.mouth;
+    const sy = 1 + 0.012 * breath + 0.035 * st.mouth;
+    squash.scale.set(sx, sy, sx);
+    const bob = sp > 0.04 ? Math.abs(Math.sin(t * 4.6)) * 0.035 * Math.min(1, sp * 1.5) : 0;
+    squash.position.y = GROUND + bob + 0.035 * st.mouth;
+
+    let sway = 0.018 * Math.sin(t * 1.1) * (0.5 + 0.5 * idle) + 0.025 * Math.sin(t * 5.2) * st.energy;
+    if (pose === 'sing') sway += 0.045 * Math.sin(t * 5.2);
+    if (pose === 'heart' || pose === 'present') sway *= 0.45;
+    model.rotation.z = lerp(model.rotation.z, sway, damp(6, dt));
+    model.rotation.x = lerp(model.rotation.x, (pose === 'heart' || pose === 'present') ? 0.035 : 0, damp(4, dt));
+
+    /* aletas */
+    const baseL = wings[0].userData.base, baseR = wings[1].userData.base;
+    let targetLZ = baseL - 0.04 * Math.sin(t * 1.3), targetRZ = baseR + 0.04 * Math.sin(t * 1.3);
+    let targetLX = 0, targetRX = 0;
+    if (pose === 'wave') {
+      targetRZ = baseR + 1.35 + 0.20 * Math.sin(t * 7.2);
+      targetRX = -0.28;
+      targetLZ = baseL - 0.025 * Math.sin(t * 1.6);
+    } else if (pose === 'sing') {
+      const flap = 0.08 + 0.16 * st.mouth + 0.05 * Math.sin(t * 6);
+      targetLZ = baseL - flap; targetRZ = baseR + flap;
+    } else if (pose === 'present' || pose === 'heart') {
+      const hug = pose === 'heart' ? 0.42 : 0.32;
+      targetLZ = baseL + hug; targetRZ = baseR - hug;
+      targetLX = targetRX = -0.95;
+    } else {
+      const flap = 0.05 + 0.18 * Math.min(1, sp * 1.4) + 0.02 * Math.sin(t * 3.1);
+      targetLZ = baseL - flap; targetRZ = baseR + flap;
+    }
+    wings[0].rotation.z = lerp(wings[0].rotation.z, targetLZ, damp(7, dt));
+    wings[1].rotation.z = lerp(wings[1].rotation.z, targetRZ, damp(7, dt));
+    wings[0].rotation.x = lerp(wings[0].rotation.x, targetLX, damp(7, dt));
+    wings[1].rotation.x = lerp(wings[1].rotation.x, targetRX, damp(7, dt));
+
+    /* patitas: pasitos suaves mientras viaja */
+    const step = sp > 0.04 ? Math.sin(t * 5.4) * 0.10 * Math.min(1, sp * 2) : 0;
+    feet[0].rotation.x = lerp(feet[0].rotation.x, step, damp(6, dt));
+    feet[1].rotation.x = lerp(feet[1].rotation.x, -step, damp(6, dt));
+
+    /* sobre de la carta */
+    st.env = lerp(st.env, envOn ? 1 : 0, damp(5, dt));
+    envelope.visible = st.env > 0.02;
+    envelope.scale.setScalar(Math.max(0.001, st.env * 1.18));
+    envelope.position.y = -0.28 + st.env * 0.04 + Math.sin(t * 1.8) * 0.018;
+    envelope.position.z = 1.28 + st.env * 0.14 + Math.sin(t * 1.1) * 0.012;
+    envelope.rotation.y = Math.sin(t * 0.9) * 0.04;
+    envelope.rotation.z = Math.sin(t * 1.15) * 0.025;
+    envelopeLight.intensity = st.env * 0.95;
+  }
+
+  function reset() {
+    st.mouth = 0; st.energy = 0; st.env = 0;
+    jaw.rotation.x = JAW_REST;
+    envelope.visible = false; envelope.scale.setScalar(0.001); envelopeLight.intensity = 0;
+    squash.scale.set(1, 1, 1); squash.position.y = GROUND;
+    model.rotation.set(0, 0, 0);
+    wings.forEach(w => w.rotation.set(0, 0, w.userData.base));
+    feet.forEach(f => f.rotation.x = 0);
+  }
+
+  return { root, rig, head, update, reset, pitch: wUp => lerp(0.18, 0.02, wUp), envelope, state: st };
+}
+
+let otter = buildPenguin();
+scene.add(otter.root); otter.root.visible = false; otter.root.position.copy(INTRO_POS);
+
+/* luces suaves que acompañan al pingüino para que el cuerpo tenga volumen */
+const guideKey = new THREE.PointLight(0xffe4d0, 0, 20, 2); scene.add(guideKey);
+const guideRim = new THREE.PointLight(0xff7fb6, 0, 18, 2); scene.add(guideRim);
+const guideFill = new THREE.PointLight(0xfff0e2, 0, 30, 2); scene.add(guideFill);
+
+/* estela de brillos */
+const trail = (() => {
+  const N = 110, pos = new Float32Array(N * 3), age = new Float32Array(N).fill(1), sz = new Float32Array(N), vel = new Float32Array(N * 3), col = new Float32Array(N * 3);
+  const g = new THREE.BufferGeometry();
+  addAttr(g, 'position', pos, 3); addAttr(g, 'aAge', age, 1); addAttr(g, 'aSize', sz, 1); addAttr(g, 'aColor', col, 3);
+  const m = new THREE.ShaderMaterial({
+    uniforms: { uScale: U.uScale },
+    vertexShader: `
+      attribute float aAge; attribute float aSize; attribute vec3 aColor; uniform float uScale;
+      varying vec3 vColor; varying float vAlpha;
+      void main(){
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = clamp(aSize * (1.0 + aAge) * uScale / -mv.z, 0.0, 40.0);
+        vColor = aColor; vAlpha = (1.0 - aAge) * 0.9;
+      }`,
+    fragmentShader: POINT_FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+  });
+  const p = new THREE.Points(g, m); p.frustumCulled = false; scene.add(p);
+  let head = 0, acc = 0;
+  return {
+    update(dt, origin, speed) {
+      acc += speed * dt * 0.9;
+      while (acc >= 1) {
+        acc -= 1; const i = head; head = (head + 1) % N;
+        pos[i * 3] = origin.x + gauss() * 0.5; pos[i * 3 + 1] = origin.y + gauss() * 0.5; pos[i * 3 + 2] = origin.z + gauss() * 0.5;
+        vel[i * 3] = gauss() * 0.4; vel[i * 3 + 1] = gauss() * 0.4 + 0.3; vel[i * 3 + 2] = gauss() * 0.4;
+        age[i] = 0; sz[i] = 0.35 + Math.random() * 0.5;
+        const pink = Math.random() < 0.6; col[i * 3] = 1; col[i * 3 + 1] = pink ? 0.55 : 0.92; col[i * 3 + 2] = pink ? 0.78 : 1;
+      }
+      for (let i = 0; i < N; i++) {
+        if (age[i] >= 1) continue;
+        age[i] = Math.min(1, age[i] + dt / 1.6);
+        pos[i * 3] += vel[i * 3] * dt; pos[i * 3 + 1] += vel[i * 3 + 1] * dt; pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
+      }
+      const a = g.attributes;
+      a.position.needsUpdate = a.aAge.needsUpdate = a.aSize.needsUpdate = a.aColor.needsUpdate = true;
+    }
+  };
+})();
+
+/* ---------------- estado general ---------------- */
+const S = { phase: 'scan', T: 0, prog: 0, holding: false, formT: 0, form: 0, boomT: 0, boom: 0, finalT: 0, galT: 0, otterOn: false, otterVis: 0, flash: 0, freeze: false, done: false };
+const V = { a: new THREE.Vector3(), b: new THREE.Vector3(), c: new THREE.Vector3(), up: new THREE.Vector3(0, 1, 0), zero: new THREE.Vector3() };
+const mtx = new THREE.Matrix4(), qb = new THREE.Quaternion();
+function quatLook(dir, out) { mtx.lookAt(dir, V.zero, V.up); return out.setFromRotationMatrix(mtx); }
+
+const cam = { pos: new THREE.Vector3(0, 0, SCAN_Z), look: new THREE.Vector3() };
+const OVERVIEW = new THREE.Vector3(92 * Math.sin(1.12) * Math.sin(0.5), 92 * Math.cos(1.12), 92 * Math.sin(1.12) * Math.cos(0.5));
+const pointer = { x: 0, y: 0 };
+let tour = null, intro = null, introStarted = false, heading = 0, yawRate = 0, speedNow = 0;
+
+const bubble = $('#bubble'), sayEl = $('#say'), nextBtn = $('#skipMsg'), letterBtn = $('#openLetter');
+const singBtn = $('#singBtn'), songUI = $('#serenade'), lyricEl = $('#lyricLine'), songEl = $('#song'), liveEl = $('#live');
+const bub = { text: '', typed: 0, read: 0, show: false };
+let uiKey = '', autoLetterShown = false;
+
+function setUI() {
+  const ready = S.phase === 'final' && S.finalT >= FINAL_READY;
+  if (ready && !autoLetterShown) {
+    autoLetterShown = true;
+    setTimeout(() => { if (S.phase === 'final') openLetter(); }, 1000);
+  }
+  const singing = !!(tour && tour.singing);
+  const k = [!!tour, ready, EDIT, singing].join();
+  if (k === uiKey) return; uiKey = k;
+  $('#skip').hidden = !tour || singing;
+  $('#again').hidden = !ready;
+  $('#mail').hidden = !ready;
+  $('#photoBtn').hidden = !EDIT;
+  document.body.classList.toggle('show-brand', ready);
+  $('#caption').classList.toggle('show', ready);
+}
+
+function easeSeg(f, s, e) {
+  const g = x => x * x * (2 - x);
+  if (s && e) return f * f * (3 - 2 * f);
+  if (s) return g(f);
+  if (e) return 1 - g(1 - f);
+  return f;
+}
+
+function enterIntro() {
+  if (S.phase !== 'form') return;
+  S.phase = 'intro'; S.otterOn = true;
+  if (S.otterVis < 0.001) S.otterVis = 0.001;
+  intro = { t: 0, msg: 0, started: false };
+  uiKey = ''; setUI();
+}
+
+function startTour() {
+  const pts = [otter.root.position.clone()], stopAt = {};
+  WAY.forEach((w, k) => { pts.push(new THREE.Vector3(w.p[0], w.p[1], w.p[2])); if (w.stop !== undefined) stopAt[k + 1] = w.stop; });
+  const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal', 0.5), durs = [];
+  for (let i = 0; i < pts.length - 1; i++) durs.push(Math.max(1.5, pts[i].distanceTo(pts[i + 1]) / 19));
+  tour = { pts, stopAt, curve, durs, n: pts.length, seg: 0, f: 0, state: 'fly', w: 0, stop: -1, msg: 0, stopCam: new THREE.Vector3(), pose: '', envOn: false, camBlend: 1, songDone: false, singing: false };
+  S.phase = 'tour'; hideBubble(); setUI();
+}
+function posAt(seg, f, out) { return tour.curve.getPoint(clamp((seg + f) / (tour.n - 1), 0, 1), out); }
+
+function beginDwell(k) {
+  tour.state = 'dwell'; tour.stop = k; tour.msg = 0; tour.pose = CONFIG.stops[k].pose || '';
+  tour.songDone = false; tour.singing = false;
+  const p = tour.pts[tour.seg];
+  V.a.copy(p).setY(0); if (V.a.lengthSq() < 1) V.a.set(0, 0, 1); V.a.normalize();
+  const c = Math.cos(0.6), s = Math.sin(0.6);
+  tour.stopCam.set(p.x + (V.a.x * c + V.a.z * s) * 7.6, p.y + 1.7, p.z + (-V.a.x * s + V.a.z * c) * 7.6);
+  startMsg();
+}
+function showMsg(stop, idx, isIntro) {
+  bub.text = stop.say[idx]; bub.typed = 0; bub.show = true;
+  sayEl.textContent = ''; bubble.classList.add('show');
+  liveEl.textContent = CONFIG.guide + ': ' + bub.text;
+  const last = idx === stop.say.length - 1;
+  const showSong = last && !!stop.song && !(tour && tour.songDone);
+  const showLetter = last && !!stop.letter && !showSong;
+  letterBtn.hidden = !showLetter; singBtn.hidden = !showSong;
+  nextBtn.hidden = last && (!!stop.letter || showSong);
+  nextBtn.textContent = last ? (isIntro ? 'Vamos ✨' : 'Siguiente parada ›') : 'Siguiente ›';
+  if (tour) tour.envOn = !!stop.letter && last && !showSong;
+}
+function startIntro() {
+  if (!intro) intro = { t: 0, msg: 0, started: false };
+  intro.started = true; intro.msg = 0;
+  showMsg(CONFIG.stops[0], 0, true);
+}
+function startMsg() {
+  showMsg(CONFIG.stops[tour.stop], tour.msg, false);
+}
+function nextMsg() {
+  if (intro) {
+    const stop = CONFIG.stops[0];
+    if (bub.typed < bub.text.length) { bub.typed = bub.text.length; sayEl.textContent = bub.text; return; }
+    if (intro.msg < stop.say.length - 1) { intro.msg++; tapNote(); showMsg(stop, intro.msg, true); return; }
+    intro = null; hideBubble(); startTour(); return;
+  }
+  if (!tour || tour.state !== 'dwell') return;
+  const stop = CONFIG.stops[tour.stop];
+  if (bub.typed < bub.text.length) { bub.typed = bub.text.length; sayEl.textContent = bub.text; return; }
+  if (tour.msg < stop.say.length - 1) { tour.msg++; tapNote(); startMsg(); return; }
+  if (stop.letter) return;
+  hideBubble(); tour.state = 'fly'; tour.envOn = false;
+}
+function hideBubble() { bub.show = false; bubble.classList.remove('show'); }
+function finishTour() { stopSong(false); intro = null; tour = null; hideBubble(); startBoom(); }
+function startBoom() {
+  if (S.phase === 'boom' || S.phase === 'final') return;
+  S.phase = 'boom'; S.boomT = 0; S.finalT = 0; setUI(); boomSound();
+}
+
+/* --- canción de Pingu: usa cancion.mp3 si existe; si no, cajita de música --- */
+let songTimer = null, lyricTimer = null, songAnalyser = null, songSource = null, songBuf = null;
+function ensureSongAnalyser() {
+  if (!ac) return null;
+  if (!songAnalyser) {
+    try {
+      songSource = ac.createMediaElementSource(songEl);
+      songAnalyser = ac.createAnalyser();
+      songAnalyser.fftSize = 512;
+      songAnalyser.smoothingTimeConstant = 0.35;
+      songBuf = new Uint8Array(songAnalyser.fftSize);
+      songSource.connect(songAnalyser);
+      songAnalyser.connect(ac.destination);
+    } catch (err) {
+      songAnalyser = null; songSource = null; songBuf = null;
+    }
+  }
+  return songAnalyser;
+}
+function startSong() {
+  if (!tour || tour.state !== 'dwell' || tour.singing) return;
+  const stop = CONFIG.stops[tour.stop];
+  if (!stop.song) return;
+  tour.singing = true; tour.pose = 'sing';
+  hideBubble(); songUI.classList.add('show'); lyricEl.textContent = '';
+  setTimeout(() => $('#songStop').focus(), 60);
+  const lyrics = CONFIG.song.lyrics;
+  let li = 0;
+  const step = () => {
+    if (!tour || !tour.singing) return;
+    lyricEl.textContent = lyrics[li % lyrics.length];
+    lyricEl.style.opacity = '0'; void lyricEl.offsetWidth; lyricEl.style.opacity = '1';
+    li++; lyricTimer = setTimeout(step, 3600);
+  };
+  step();
+  songTimer = setTimeout(() => stopSong(true), Math.max(12000, lyrics.length * 3600 + 1600));
+  ensureSongAnalyser();
+  try {
+    songEl.src = '/cancion.mp3';
+    songEl.currentTime = 0;
+    songEl.volume = 0.95;
+    songEl.muted = muted;
+    const p = songEl.play();
+    if (p && p.catch) p.catch(() => {});
+  } catch (_) {}
+}
+function stopSong(prompt) {
+  const was = !!(tour && tour.singing);
+  if (tour) tour.singing = false;
+  clearTimeout(songTimer); clearTimeout(lyricTimer); songTimer = lyricTimer = null;
+  songUI.classList.remove('show');
+  try { songEl.pause(); } catch (_) {}
+  musicOn = true;
+  if (prompt && was) afterSong();
+}
+function afterSong() {
+  if (!tour || tour.state !== 'dwell') return;
+  const stop = CONFIG.stops[tour.stop];
+  tour.songDone = true; tour.pose = 'present'; tour.envOn = true;
+  bub.text = stop.postSong || 'Y ahora sí… mi carta es toda tuya. 💌';
+  bub.typed = 0; bub.show = true; sayEl.textContent = '';
+  bubble.classList.add('show'); liveEl.textContent = CONFIG.guide + ': ' + bub.text;
+  letterBtn.hidden = false; singBtn.hidden = true; nextBtn.hidden = true;
+  setTimeout(() => letterBtn.focus(), 60);
+}
+songEl.addEventListener('playing', () => {
+  if (!tour || !tour.singing) return;
+  musicOn = false;
+  clearTimeout(songTimer);
+  songTimer = setTimeout(() => stopSong(true), Math.max(12000, ((songEl.duration || 180) + 1) * 1000));
+});
+songEl.addEventListener('ended', () => { if (tour && tour.singing) stopSong(true); });
+
+function resetAll() {
+  stopSong(false); closeLetter(true); hideBubble(); tour = null; intro = null; introStarted = false;
+  autoLetterShown = false;
+  Object.assign(S, { phase: 'scan', prog: 0, holding: false, formT: 0, form: 0, boomT: 0, boom: 0, finalT: 0, galT: 0, otterOn: false, otterVis: 0, flash: 0 });
+  otter.root.visible = false; otter.root.position.copy(INTRO_POS); otter.root.quaternion.identity();
+  if (otter.reset) otter.reset();
+  $('#scan').classList.remove('gone'); musicOn = false; uiKey = ''; setUI();
+}
+
+nextBtn.addEventListener('click', nextMsg);
+singBtn.addEventListener('click', startSong);
+letterBtn.addEventListener('click', () => {
+  if (tour && tour.state === 'dwell' && CONFIG.stops[tour.stop].letter) finishTour();
+  else openLetter();
+});
+$('#skip').addEventListener('click', () => { closeLetter(true); finishTour(); });
+$('#again').addEventListener('click', resetAll);
+$('#mail').addEventListener('click', openLetter);
+$('#againLetter').addEventListener('click', resetAll);
+$('#closeLetter').addEventListener('click', () => closeLetter(false));
+$('#songStop').addEventListener('click', () => stopSong(true));
+
+/* carta */
+const modal = $('#modal');
+function openLetter() {
+  hideBubble(); modal.classList.add('open'); letterChime();
+  liveEl.textContent = 'Carta abierta para Karen.';
+  setTimeout(() => { const c = $('#close'); if (c) c.focus(); }, 80);
+}
+function closeLetter(silent) {
+  modal.classList.remove('open');
+  if (!silent) {
+    liveEl.textContent = 'Carta cerrada.';
+    setTimeout(() => { const m = $('#mail'); if (m && !m.hidden) m.focus(); }, 80);
+  }
+}
+$('#close').addEventListener('click', () => closeLetter(false));
+modal.addEventListener('pointerdown', e => { if (e.target === modal) closeLetter(false); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('open')) closeLetter(false); });
+
+/* fotos (modo #editar) */
+$('#file').addEventListener('change', e => {
+  [...e.target.files].slice(0, Math.max(0, 12 - photos.length)).forEach(f => {
+    const img = new Image(); img.onload = () => { photos.push(img); refreshPhotos(); }; img.src = URL.createObjectURL(f);
+  });
+  e.target.value = '';
+});
+
+/* ---------------- escáner: mantener el dedo ---------------- */
+const scanner = $('#scanner'), ringP = $('#ringProg'), hint = $('#scanHint');
+let hintHtml = '';
+function setHint(html) { if (html !== hintHtml) { hintHtml = html; hint.innerHTML = html; } }
+function setHold(v) { S.holding = v; scanner.classList.toggle('holding', v); }
+scanner.addEventListener('pointerdown', e => { e.preventDefault(); if (S.phase !== 'scan') return; startAudio(); setHold(true); try { scanner.setPointerCapture(e.pointerId); } catch (_) {} });
+['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => scanner.addEventListener(n, () => setHold(false)));
+scanner.addEventListener('contextmenu', e => e.preventDefault());
+scanner.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && S.phase === 'scan') { e.preventDefault(); startAudio(); setHold(true); } });
+scanner.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') setHold(false); });
+addEventListener('blur', () => setHold(false));
+addEventListener('pointermove', e => { pointer.x = (e.clientX / innerWidth - 0.5) * 2; pointer.y = (e.clientY / innerHeight - 0.5) * 2; });
+
+function recognized() {
+  S.phase = 'form'; S.formT = 0; setHold(false); musicOn = true; tick = 0;
+  setHint('Huella reconocida, Mi Mamacita Hermosa 🥰<small>Tu galaxia está naciendo…</small>');
+  setTimeout(() => $('#scan').classList.add('gone'), 1400);
+  try { navigator.vibrate && navigator.vibrate([40, 70, 40]); } catch (_) {}
+  riseChime();
+  if (ac) musicStep();
+}
+
+/* ---------------- cajita de música y sonidos suaves ---------------- */
+let ac = null, master = null, muted = false, tick = 0, musicOn = false, scanOsc = null, scanGain = null;
+const VOL = 0.17;
+
+function makeIR(dur, decay) {
+  const len = Math.floor(ac.sampleRate * dur), buf = ac.createBuffer(2, len, ac.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+  }
+  return buf;
+}
+
+/* nota de cajita: fundamental y armónicos cristalinos con caída larga */
+function bell(f, t0, dur, vol) {
+  if (!ac || ac.state !== 'running') return;
+  const g = ac.createGain(), peak = Math.max(0.0003, vol);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(peak, t0 + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  [[1, 1], [2.01, 0.34], [3.02, 0.12], [4.97, 0.05]].forEach(([k, a]) => {
+    if (f * k > 12000) return;
+    const o = ac.createOscillator(), og = ac.createGain();
+    o.type = 'sine'; o.frequency.value = f * k; o.detune.value = (Math.random() - 0.5) * 5;
+    og.gain.value = a; o.connect(og); og.connect(g);
+    o.start(t0); o.stop(t0 + dur + 0.08);
+  });
+  g.connect(master);
+}
+
+/* progresión I–vi–IV–V en registro de cajita */
+const PROG = [
+  [523.25, 659.25, 783.99, 987.77],  /* Cmaj7 */
+  [440.00, 523.25, 659.25, 783.99],  /* Am7   */
+  [349.23, 440.00, 523.25, 659.25],  /* Fmaj7 */
+  [392.00, 493.88, 587.33, 698.46]   /* G7    */
+];
+const PAT = [0, 2, 1, 3, -1, 2, 1, 0];
+function musicStep() {
+  if (!ac || ac.state !== 'running' || !musicOn) return;
+  const t0 = ac.currentTime + 0.06, ch = PROG[Math.floor(tick / PAT.length) % PROG.length], step = tick % PAT.length;
+  if (step === 0) {
+    bell(ch[0] / 4, t0, 4.4, 0.045);
+    bell(ch[0], t0, 2.8, 0.06);
+  }
+  const idx = PAT[step];
+  if (idx >= 0) bell(ch[idx] * (step === 5 ? 2 : 1), t0, 1.9 + Math.random() * 0.5, step === 5 ? 0.03 : 0.075);
+  if (step === 7 && Math.random() < 0.45) bell(ch[1] * 2, t0 + 0.22, 1.8, 0.022);
+  tick++;
+}
+
+/* gestos cortos: avanzar, abrir la carta, explosión */
+function tapNote() {
+  if (!ac || ac.state !== 'running' || muted) return;
+  const ch = PROG[Math.floor(tick / PAT.length) % PROG.length];
+  bell(ch[2] * 2, ac.currentTime + 0.02, 1.1, 0.03);
+}
+function riseChime() {
+  if (!ac || ac.state !== 'running') return;
+  const t0 = ac.currentTime + 0.04;
+  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => bell(f, t0 + i * 0.1, 1.6, 0.07));
+}
+function letterChime() {
+  if (!ac || ac.state !== 'running' || muted) return;
+  const t0 = ac.currentTime + 0.04;
+  [1046.5, 1318.51, 1567.98].forEach((f, i) => bell(f, t0 + i * 0.08, 2.0, 0.055));
+}
+function boomSound() {
+  if (!ac || ac.state !== 'running' || muted) return;
+  const t0 = ac.currentTime + 0.03;
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = 'sine'; o.frequency.setValueAtTime(174.61, t0); o.frequency.exponentialRampToValueAtTime(43.65, t0 + 1.7);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.13, t0 + 0.2); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.9);
+  o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + 2);
+  [523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98].forEach((f, i) => bell(f, t0 + 0.12 + i * 0.09, 2.4, 0.035));
+}
+
+function startAudio() {
+  if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
+  try {
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    master = ac.createGain(); master.gain.value = muted ? 0 : VOL;
+    const comp = ac.createDynamicsCompressor();
+    comp.threshold.value = -18; comp.knee.value = 24; comp.ratio.value = 4; comp.attack.value = 0.01; comp.release.value = 0.3;
+    master.connect(comp); comp.connect(ac.destination);
+    const verb = ac.createConvolver(); verb.buffer = makeIR(2.4, 2.8);
+    const wet = ac.createGain(); wet.gain.value = 0.24;
+    master.connect(verb); verb.connect(wet); wet.connect(comp);
+    setInterval(musicStep, 460);
+    scanOsc = ac.createOscillator(); scanOsc.type = 'sine'; scanOsc.frequency.value = 170;
+    scanGain = ac.createGain(); scanGain.gain.value = 0; scanOsc.connect(scanGain); scanGain.connect(master); scanOsc.start();
+  } catch (_) { ac = null; }
+}
+$('#mute').addEventListener('click', () => {
+  muted = !muted; $('#mute').textContent = muted ? '🔇' : '🔊'; $('#mute').setAttribute('aria-label', muted ? 'Activar sonido' : 'Silenciar sonido');
+  if (ac) master.gain.setTargetAtTime(muted ? 0 : VOL, ac.currentTime, 0.05);
+  songEl.muted = muted;
+});
+document.addEventListener('visibilitychange', () => { if (ac) { if (document.hidden) ac.suspend(); else ac.resume(); } });
+
+/* ---------------- bucle principal ---------------- */
+let last = 0;
+const headW = new THREE.Vector3(), prevPos = new THREE.Vector3(), guideDir = new THREE.Vector3(), flashEl = $('#flash');
+function frame(ts) {
+  const now = ts / 1000, dt = Math.min(0.05, now - (last || now)); last = now;
+  const tdt = S.freeze ? 0 : dt;
+  S.T += dt; const T = S.T, root = otter.root;
+
+  /* --- fases --- */
+  if (S.phase === 'scan') {
+    S.prog = clamp(S.prog + (S.holding ? tdt / SCAN_HOLD : -tdt / 1.4), 0, 1);
+    if (S.prog >= 1) recognized();
+    const pct = Math.round(S.prog * 100);
+    if (S.phase === 'scan') setHint(S.holding ? `Reconociendo huella… ${pct}%` : (S.prog > 0 ? 'Sigue presionando…' : 'Mantén presionado sobre la huella<small>Para entrar a tu galaxia</small>'));
+    ringP.style.setProperty('--p', pct);
+  }
+  if (S.phase !== 'scan' && S.formT < FORM_T) S.formT = Math.min(FORM_T, S.formT + tdt);
+  S.form = S.phase === 'scan' ? 0 : easeIO(S.formT / FORM_T);
+  if (S.phase === 'form' || S.phase === 'intro' || S.phase === 'tour') S.galT += tdt;
+  if ((S.phase === 'form' || S.phase === 'intro' || S.phase === 'tour') && S.form >= 0.42) S.otterOn = true;
+  if (S.phase === 'form' && S.form >= 0.8) enterIntro();
+  if (S.phase === 'intro' && intro) {
+    intro.t += tdt;
+    if (!intro.started && intro.t > 0.8) startIntro();
+  }
+  if (S.phase === 'boom' || S.phase === 'final') {
+    if (S.phase === 'boom') {
+      S.boomT = Math.min(BOOM_T, S.boomT + tdt);
+      if (S.boomT >= BOOM_T) { S.phase = 'final'; S.finalT = 0; }
+    } else {
+      S.boomT = Math.max(0, S.boomT - tdt);
+      S.finalT += tdt;
+    }
+    S.otterOn = false;
+  }
+  S.boom = clamp(S.boomT / BOOM_T, 0, 1);
+  S.flash = S.phase === 'boom' ? (S.boomT < 0.15 ? S.boomT / 0.15 : Math.max(0, 1 - (S.boomT - 0.15) / 0.9)) * 0.85 : 0;
+  flashEl.style.opacity = S.flash.toFixed(3);
+  S.otterVis = clamp(S.otterVis + (S.otterOn ? tdt / 0.9 : -tdt * 4), 0, 1);
+  setUI();
+
+  /* --- uniformes --- */
+  U.uTime.value = T; U.uGalTime.value = S.galT; U.uForm.value = S.form; U.uBoom.value = S.boom;
+  U.uProg.value = S.prog; U.uScanY.value = Math.sin(T * 1.5) * 17.5;
+  const ph = (T * 1.15) % 1, beat = 1 + 0.1 * Math.exp(-ph * 6) + 0.05 * Math.exp(-Math.abs(ph - 0.3) * 16);
+  U_HEART.uBeat.value = beat; U_HEART.uYaw.value = Math.sin(T * 0.5) * 0.5;
+  const vis = smooth(0.6, 1, S.form) * (1 - S.boom);
+  heartGlow.scale.set(30 * beat, 30 * beat, 1); heartGlow.material.opacity = heartGlow.userData.base * vis;
+  coreGlow.material.opacity = coreGlow.userData.base * vis;
+  pinkLight.intensity = (1.1 + (beat - 1) * 6) * vis;
+
+  /* --- frases y fotos --- */
+  const sv = smooth(0.7, 0.95, S.form) * (1 - S.boom), nP = phraseSprites.length;
+  const phraseDim = S.phase === 'intro' ? 0.28 : 1;
+  phraseSprites.forEach((s, i) => {
+    const a = i / nP * TAU + T * 0.1, r = 30;
+    s.position.set(Math.cos(a) * r, Math.sin(a * 3 + i) * 2.4 + Math.cos(a) * 2.2, Math.sin(a) * r);
+    s.material.opacity = clamp(1.25 - s.position.distanceTo(camera.position) / 105, 0.3, 1) * sv * phraseDim;
+  });
+  photoSprites.forEach((s, i) => {
+    if (!photos.length) { s.material.opacity = 0; return; }
+    const a = -(i / photoSprites.length * TAU) + T * 0.08, r = 19;
+    s.position.set(Math.cos(a) * r, Math.sin(a * 2) * 1.4, Math.sin(a) * r);
+    s.material.rotation = Math.sin(T * 0.8 + i * 1.7) * 0.07;
+    s.material.opacity = clamp(1.25 - s.position.distanceTo(camera.position) / 90, 0.35, 1) * sv;
+  });
+
+  /* --- texto del globo (sin autoavance: todo espera un toque) --- */
+  if (bub.show) {
+    bub.typed = Math.min(bub.text.length, bub.typed + tdt * 40);
+    const shown = bub.text.slice(0, Math.floor(bub.typed));
+    if (sayEl.textContent !== shown) sayEl.textContent = shown;
+  }
+
+  /* --- pingüino --- */
+  let pose = S.phase === 'intro' ? 'wave' : '', envOn = false, singing = false, songLevel = null;
+  prevPos.copy(root.position);
+  if (tour) {
+    envOn = tour.envOn; pose = tour.singing ? 'sing' : tour.pose; singing = tour.singing;
+    if (tour.state === 'fly') {
+      const s = !!tour.stopAt[tour.seg] || tour.seg === 0, e = !!tour.stopAt[tour.seg + 1];
+      tour.f += tdt / tour.durs[tour.seg];
+      if (tour.f >= 1) {
+        tour.seg++; tour.f = 0; root.position.copy(tour.pts[tour.seg]);
+        if (tour.stopAt[tour.seg] !== undefined) beginDwell(tour.stopAt[tour.seg]);
+        else if (tour.seg >= tour.n - 1) finishTour();
+      } else posAt(tour.seg, easeSeg(tour.f, s, e), root.position);
+    } else {
+      root.position.copy(tour.pts[tour.seg]);
+    }
+    if (tour) tour.w = lerp(tour.w, tour.state === 'dwell' ? 1 : 0, damp(2.2, dt));
+  }
+  if (singing && songAnalyser && songBuf) {
+    songAnalyser.getByteTimeDomainData(songBuf);
+    let sum = 0;
+    for (let i = 0; i < songBuf.length; i++) { const v = (songBuf[i] - 128) / 128; sum += v * v; }
+    songLevel = clamp((Math.sqrt(sum / songBuf.length) - 0.012) * 6.5, 0, 1);
+  }
+  const showOtter = S.otterVis > 0.005;
+  root.visible = showOtter;
+  if (showOtter) {
+    const ov = S.otterVis, back = 1 + 1.4 * Math.pow(ov - 1, 3) + 0.4 * Math.pow(ov - 1, 2);
+    root.scale.setScalar(Math.max(0.001, ov < 1 ? back * ov : 1));
+    const vel = V.c.copy(root.position).sub(prevPos).divideScalar(Math.max(dt, 1e-4));
+    speedNow = lerp(speedNow, vel.length(), damp(6, dt));
+    const introOn = S.phase === 'intro';
+    const dwell = introOn || (!!tour && tour.state === 'dwell');
+    if (dwell) { V.a.copy(camera.position).sub(root.position).setY(0); if (V.a.lengthSq() < 1e-4) V.a.set(0, 0, 1); quatLook(V.a.normalize(), qb); }
+    else if (speedNow > 1.2) quatLook(V.a.copy(vel).normalize(), qb);
+    else qb.copy(root.quaternion);
+    root.quaternion.slerp(qb, damp(dwell ? 3.5 : 5, dt));
+    guideDir.set(0, 0, 1).applyQuaternion(root.quaternion);
+    guideKey.position.copy(root.position).addScaledVector(guideDir, 2.4); guideKey.position.y += 3.2;
+    guideRim.position.copy(root.position).addScaledVector(guideDir, -2.0); guideRim.position.y += 2.2;
+    guideKey.intensity = 0.62 * ov; guideRim.intensity = 0.55 * ov;
+    V.a.set(0, 0, 1).applyQuaternion(root.quaternion);
+    const hd = Math.atan2(V.a.x, V.a.z); let dh = hd - heading; dh = Math.atan2(Math.sin(dh), Math.cos(dh)); heading = hd;
+    yawRate = lerp(yawRate, clamp(dh / Math.max(dt, 1e-4), -3, 3), damp(5, dt));
+    const wUp = dwell ? 1 : (tour ? tour.w : 0);
+    otter.rig.rotation.x = otter.pitch(wUp);
+    otter.rig.rotation.z = lerp(otter.rig.rotation.z, clamp(-yawRate * 0.22, -0.5, 0.5) * (1 - wUp), damp(5, dt));
+    otter.rig.rotation.y = lerp(otter.rig.rotation.y, 0.08 * wUp, damp(3, dt));
+    otter.update(dt, T, clamp(speedNow / 18, 0, 1), wUp, pose, envOn, singing, songLevel);
+    trail.update(dt, V.c.set(0, 0, -1.25).applyQuaternion(root.quaternion).add(root.position), speedNow > 2 ? speedNow * 0.9 : 0);
+  } else {
+    trail.update(dt, root.position, 0);
+    guideKey.intensity = guideRim.intensity = 0;
+  }
+
+  /* --- cámara --- */
+  let desPos = V.c, desLook = V.b.set(0, 0, 0), camRate = 2.4;
+  if (tour) {
+    V.a.set(0, 0, 1).applyQuaternion(root.quaternion).setY(0).normalize();
+    desPos = V.c.copy(root.position).addScaledVector(V.a, -8).add(V.up.clone().multiplyScalar(3.2));
+    desPos.lerp(tour.stopCam, tour.w);
+    desLook = V.b.copy(root.position).add(V.up.clone().multiplyScalar(0.4 + 1.6 * tour.w));
+    camRate = tour.state === 'dwell' ? 2.2 : 3.2;
+  } else if (S.phase === 'scan') {
+    desPos.set(Math.sin(T * 0.4) * 0.8, Math.cos(T * 0.3) * 0.5, SCAN_Z); camRate = 4;
+  } else if (S.phase === 'form') {
+    const f = smooth(0, 0.62, S.form);
+    desPos.set(0, 0, SCAN_Z).lerp(INTRO_CAM, f);
+    desLook.set(0, 0, 0).lerp(INTRO_LOOK, f);
+    camRate = 4.2;
+  } else if (S.phase === 'intro') {
+    desPos.copy(INTRO_CAM); desLook.copy(INTRO_LOOK); camRate = 2.4;
+  } else if (S.phase === 'boom' || S.phase === 'final') {
+    desPos.copy(OVERVIEW);
+    camRate = S.phase === 'boom' ? 1.8 : 0.9;
+  }
+  cam.pos.lerp(desPos, damp(camRate, dt)); cam.look.lerp(desLook, damp(camRate + 0.6, dt));
+  camera.position.copy(cam.pos); camera.lookAt(cam.look);
+  guideFill.position.copy(camera.position); guideFill.position.y += 1.4;
+  guideFill.intensity = 0.28 * S.otterVis;
+
+  /* --- tono de escaneo --- */
+  if (scanGain && ac) {
+    scanGain.gain.setTargetAtTime(S.phase === 'scan' && !muted ? S.prog * 0.3 : 0, ac.currentTime, 0.08);
+    scanOsc.frequency.setTargetAtTime(170 + S.prog * 480, ac.currentTime, 0.1);
+  }
+
+  /* --- globo sobre la cabeza --- */
+  if (bub.show) {
+    otter.head.getWorldPosition(headW); headW.y += 1.15; headW.project(camera);
+    const W = innerWidth, H = innerHeight, bw = bubble.offsetWidth, bh = bubble.offsetHeight;
+    let x = (headW.x * 0.5 + 0.5) * W, y = (-headW.y * 0.5 + 0.5) * H;
+    if (headW.z > 1) { x = W / 2; y = H - 90; }
+    const gut = 16 + bw / 2, lx = clamp(x, gut, W - gut), top = clamp(y, bh + 74, H - 18);
+    bubble.style.transform = `translate(${lx - bw / 2}px, ${top - bh - 12}px)`;
+    bubble.style.setProperty('--tx', clamp(x - (lx - bw / 2), 24, bw - 24) + 'px');
+  }
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+/* arranque */
+resize(); addEventListener('resize', resize);
+camera.position.copy(cam.pos); camera.lookAt(0, 0, 0);
+setUI();
+requestAnimationFrame(frame);
+
+/* ayuda para pruebas */
+window.__pinguino = {
+  patch(o) { Object.assign(S, o); },
+  begin() { if (S.phase === 'scan') { S.prog = 1; } },
+  skipTo(k) {
+    stopSong(false); closeLetter(true); hideBubble(); tour = null; intro = null;
+    S.phase = k === 0 ? 'intro' : 'tour'; S.formT = FORM_T; S.form = 1; S.otterOn = true; S.otterVis = 1; S.galT = 1;
+    $('#scan').classList.add('gone');
+    otter.root.position.copy(INTRO_POS); otter.root.quaternion.identity();
+    if (otter.reset) otter.reset();
+    if (k === 0) {
+      intro = { t: 1, msg: 0, started: true }; startIntro();
+    } else {
+      startTour();
+      const idx = Object.keys(tour.stopAt).find(i => tour.stopAt[i] === k);
+      if (idx === undefined) return;
+      tour.seg = +idx; tour.f = 0; tour.state = 'fly'; tour.w = 0;
+      otter.root.position.copy(tour.pts[tour.seg]); beginDwell(k);
+    }
+    uiKey = ''; setUI();
+  },
+  song() { startSong(); },
+  endSong() { stopSong(true); },
+  boom() { stopSong(false); closeLetter(true); finishTour(); },
+  info() { return { phase: S.phase, form: +S.form.toFixed(2), boom: +S.boom.toFixed(2), final: +S.finalT.toFixed(2), prog: +S.prog.toFixed(2), mouth: +(otter.state.mouth || 0).toFixed(2), analyser: !!songAnalyser, pos: otter.root.position.toArray().map(v => +v.toFixed(1)), intro: intro && { msg: intro.msg, started: intro.started }, tour: tour && { seg: tour.seg, state: tour.state, stop: tour.stop, singing: tour.singing, songDone: tour.songDone } }; }
+};
+})();
+</script>
+
+</body></html>
