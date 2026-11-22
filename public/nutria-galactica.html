@@ -638,31 +638,34 @@ function buildPenguin() {
     return 0.7;
   }
 
-  /* textura: antifaz blanco con dos grandes lóbulos y entrada en V en la frente, ojos felices y barriga redonda */
-  const SHAPES = [
-    [0, -0.52, 0.78, 0.78],      // barriguita blanca ancha y suave
-    [-0.34, 0.62, 0.35, 0.44],   // parche blanco mejilla/ojo izquierdo
-    [0.34, 0.62, 0.35, 0.44],    // parche blanco mejilla/ojo derecho
-    [0, 0.20, 0.52, 0.28]        // puente suave bajo el pico
-  ];
-  function sdE(x, y, cx, cy, a, b) {
-    const nx = (x - cx) / a, ny = (y - cy) / b, k = Math.sqrt(nx * nx + ny * ny);
-    const h = Math.sqrt((nx / a) * (nx / a) + (ny / b) * (ny / b));
-    return h < 1e-9 ? -Math.min(a, b) : (k - 1) * k / h;
+  /* textura: barriga blanca suave y mejillas redondas con smin orgánico idéntico a la imagen de referencia */
+  function sdEllipse(x, y, cx, cy, rx, ry) {
+    const nx = (x - cx) / rx, ny = (y - cy) / ry;
+    const k = Math.sqrt(nx * nx + ny * ny);
+    return (k - 1.0) * Math.min(rx, ry);
+  }
+  function smin(a, b, k) {
+    const h = Math.max(0.0, Math.min(1.0, 0.5 + 0.5 * (b - a) / k));
+    return (1.0 - h) * b + h * a - k * h * (1.0 - h);
   }
   const cov = (d, aa) => d >= aa / 2 ? 0 : (d <= -aa / 2 ? 1 : 0.5 - d / aa);
   function whiteCoverage(x, y) {
-    let d = 1e9;
-    for (let k = 0; k < 4; k++) { const s = SHAPES[k], v = sdE(x, y, s[0], s[1], s[2], s[3]); if (v < d) d = v; }
-    return cov(d, 0.016);
+    const dBelly = sdEllipse(x, y, 0.0, -0.44, 0.76, 0.86);
+    const dChest = sdEllipse(x, y, 0.0, 0.22, 0.60, 0.42);
+    const dLeft = sdEllipse(x, y, -0.30, 0.64, 0.30, 0.38);
+    const dRight = sdEllipse(x, y, 0.30, 0.64, 0.30, 0.38);
+    const dCheeks = Math.min(dLeft, dRight);
+    const dTop = smin(dChest, dCheeks, 0.12);
+    const dTotal = smin(dBelly, dTop, 0.14);
+    return cov(dTotal, 0.016);
   }
   function eyeCoverage(x, y) {
-    const cx = x < 0 ? -0.34 : 0.34, cy = 0.62, R = 0.14;
-    const a = Math.atan2(y - cy, x - cx);
-    const lo = 0.488, hi = Math.PI - 0.488; // arcos sonrientes ⌒ ⌒
-    const ca = a < lo ? lo : (a > hi ? hi : a);
-    const tRatio = (ca - lo) / (hi - lo);
-    const w = 0.022 + 0.016 * Math.sin(tRatio * Math.PI); // trazo adorable y expresivo
+    const cx = x < 0 ? -0.30 : 0.30, cy = 0.65, R = 0.135;
+    const ang = Math.atan2(y - cy, x - cx);
+    const lo = 0.419, hi = 2.723; // arcos felices ⌒ ⌒
+    const ca = ang < lo ? lo : (ang > hi ? hi : ang);
+    const t = (ca - lo) / (hi - lo);
+    const w = 0.026 + 0.018 * Math.sin(t * Math.PI); // trazo tierno y expresivo
     const dx = x - (cx + R * Math.cos(ca)), dy = y - (cy + R * Math.sin(ca));
     return cov(Math.sqrt(dx * dx + dy * dy) - w, 0.009);
   }
@@ -670,7 +673,7 @@ function buildPenguin() {
     const W = 2048, H = 1024;
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d'), img = ctx.createImageData(W, H), d = img.data;
-    const K = [22, 24, 31], Wt = [254, 252, 253], E = [18, 19, 24];
+    const K = [21, 23, 29], Wt = [255, 255, 255], E = [17, 18, 22];
     const rr = new Float32Array(H), yy = new Float32Array(H);
     for (let j = 0; j < H; j++) { const v = 1 - (j + 0.5) / H, p = profileAt(-Math.PI / 2 + Math.PI * v); rr[j] = p[0]; yy[j] = p[1]; }
     const sn = new Float32Array(W), fr = new Uint8Array(W);
@@ -680,10 +683,10 @@ function buildPenguin() {
       for (let i = 0; i < W; i++) {
         const o = (j * W + i) * 4;
         let wm = 0, em = 0;
-        if (fr[i] && y > -1.45) {
+        if (fr[i] && y > -1.45 && y < 1.40) {
           const x = r * sn[i];
           wm = whiteCoverage(x, y);
-          if (wm > 0 && y > 0.35 && y < 0.95 && Math.abs(Math.abs(x) - 0.34) < 0.22) em = eyeCoverage(x, y);
+          if (wm > 0 && y > 0.45 && y < 0.90 && Math.abs(Math.abs(x) - 0.30) < 0.24) em = eyeCoverage(x, y);
         }
         let rch = K[0] + (Wt[0] - K[0]) * wm, gch = K[1] + (Wt[1] - K[1]) * wm, bch = K[2] + (Wt[2] - K[2]) * wm;
         rch = rch * (1 - em) + E[0] * em; gch = gch * (1 - em) + E[1] * em; bch = bch * (1 - em) + E[2] * em;
