@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pingüino · estudio</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    background:
+      radial-gradient(120% 90% at 50% 18%, #5b2b72 0%, #2a0f45 38%, #120720 68%, #05010b 100%);
+    font-family: ui-rounded, "Segoe UI", system-ui, sans-serif;
+  }
+  #gl { display: block; width: 100%; height: 100%; touch-action: pan-y; cursor: grab; }
+  #gl.dragging { cursor: grabbing; }
+  #tag {
+    position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
+    color: rgba(255, 226, 240, .8); font-size: 11px; letter-spacing: .18em;
+    text-transform: uppercase; z-index: 5; pointer-events: none;
+    text-shadow: 0 2px 12px rgba(0,0,0,.5);
+    white-space: nowrap;
+  }
+  #audioBar {
+    position: fixed; top: 42px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; justify-content: center; gap: 9px;
+    width: min(94vw, 440px); padding: 7px 9px 7px 8px;
+    background: rgba(24, 8, 38, .60); border: 1px solid rgba(255,255,255,.16);
+    border-radius: 999px; backdrop-filter: blur(10px); z-index: 6;
+  }
+  #audioBtn {
+    flex: 0 0 auto; border: 1px solid rgba(255, 179, 207, .55);
+    background: rgba(255, 127, 174, .92); color: #2b0718;
+    padding: 8px 13px; border-radius: 999px; cursor: pointer;
+    font: 700 11.5px/1 ui-rounded, "Segoe UI", system-ui, sans-serif;
+    white-space: nowrap;
+  }
+  #audioBtn:disabled { opacity: .55; cursor: wait; }
+  #audioStatus {
+    min-width: 0; color: rgba(255, 233, 243, .82);
+    font: 500 11px/1.25 ui-rounded, "Segoe UI", system-ui, sans-serif;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  #hud {
+    position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
+    width: min(96vw, 430px); z-index: 5;
+  }
+  #hud button {
+    border: 1px solid rgba(255,255,255,.22);
+    background: rgba(24, 8, 38, .62);
+    color: #ffe9f3; padding: 8px 12px; border-radius: 999px;
+    font: 600 12px/1 ui-rounded, "Segoe UI", system-ui, sans-serif;
+    backdrop-filter: blur(8px); cursor: pointer;
+  }
+  #hud button.on { background: #ff7fae; color: #2b0718; border-color: #ffb3cf; }
+  #hint {
+    position: fixed; left: 50%; bottom: 114px; transform: translateX(-50%);
+    color: rgba(255, 226, 240, .42); font-size: 10px; letter-spacing: .08em;
+    z-index: 4; pointer-events: none; white-space: nowrap;
+  }
+  @media (max-width: 350px) {
+    #audioStatus { display: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="gl" aria-label="Pingüino 3D sonriente con pico naranja"></canvas>
+<div id="tag">Pingüino · estudio</div>
+<div id="audioBar">
+  <button id="audioBtn" type="button">Subir tu audio</button>
+  <span id="audioStatus" role="status" aria-live="polite">El pico se moverá con tu voz</span>
+</div>
+<input id="file" type="file" accept="audio/*" hidden>
+<div id="hint">Arrastra para girarlo</div>
+<div id="hud">
+  <button data-pose="idle" class="on">Reposo</button>
+  <button data-pose="wave">Saludar</button>
+  <button data-pose="sing">Cantar</button>
+  <button data-pose="dance">Bailar</button>
+  <button data-pose="walk">Caminar</button>
+  <button data-view="three">3/4</button>
+  <button data-view="front">Frente</button>
+  <button data-view="side">Lado</button>
+  <button data-view="close">Cerca</button>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script>
+(() => {
+'use strict';
+
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const damp = (lambda, dt) => 1 - Math.exp(-lambda * dt);
+const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const C = hex => new THREE.Color(hex).convertSRGBToLinear();
+
+/* ---------------- renderer / escena ---------------- */
+const canvas = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.95;
+renderer.setClearColor(0x000000, 0);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.1, 120);
+
+/* En pantallas altas y angostas abrimos un poco el ángulo para que las aletas no toquen los bordes. */
+function fitCamera() {
+  const aspect = innerWidth / innerHeight;
+  camera.aspect = aspect;
+  camera.fov = aspect < 0.75 ? 34 : 30;
+  camera.updateProjectionMatrix();
+}
+fitCamera();
+
+/* ---------------- fondo: estrellas y resplandores ---------------- */
+function radialTexture(inner, outer, size = 256) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const x = c.getContext('2d');
+  const g = x.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, inner); g.addColorStop(0.45, inner.replace(/[\d.]+\)$/, '0.25)')); g.addColorStop(1, outer);
+  x.fillStyle = g; x.fillRect(0, 0, size, size);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t;
+}
+const glowTex = radialTexture('rgba(255,120,175,0.65)', 'rgba(255,120,175,0)', 256);
+const starTex = radialTexture('rgba(255,255,255,0.95)', 'rgba(255,255,255,0)', 32);
+for (const [x, y, z, s, col, op] of [
+  [0, 0.6, -5.5, 11, 0xff5e9c, 0.30],
+  [3.2, 1.8, -7, 7, 0xffa1c8, 0.16],
+  [-4.0, -1.4, -6, 8, 0x9b6bff, 0.18]
+]) {
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: col, transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending }));
+  sp.position.set(x, y, z); sp.scale.set(s, s, 1); scene.add(sp);
+}
+
+const N = 520;
+const starPos = new Float32Array(N * 3), starCol = new Float32Array(N * 3);
+const palette = [new THREE.Color(0xffffff), new THREE.Color(0xffc6dd), new THREE.Color(0xd8b6ff), new THREE.Color(0xffe8c8)];
+for (let i = 0; i < N; i++) {
+  const r = 8 + Math.random() * 34, a = Math.random() * TAU, y = (Math.random() - 0.5) * 34;
+  starPos[i * 3] = Math.cos(a) * r; starPos[i * 3 + 1] = y; starPos[i * 3 + 2] = Math.sin(a) * r - 10;
+  const c = palette[(Math.random() * palette.length) | 0];
+  starCol[i * 3] = c.r; starCol[i * 3 + 1] = c.g; starCol[i * 3 + 2] = c.b;
+}
+const stars = new THREE.Points(
+  new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(starPos, 3)).setAttribute('color', new THREE.BufferAttribute(starCol, 3)),
+  new THREE.PointsMaterial({ map: starTex, size: 0.12, vertexColors: true, transparent: true, opacity: 0.85, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending })
+);
+scene.add(stars);
+
+/* ---------------- entorno: reflejos color galaxia ---------------- */
+(function buildEnvironment() {
+  const pm = new THREE.PMREMGenerator(renderer);
+  const env = new THREE.Scene();
+  const g = new THREE.SphereGeometry(20, 32, 16);
+  const pos = g.attributes.position, col = new Float32Array(pos.count * 3);
+  const top = new THREE.Color(0.58, 0.38, 0.64);
+  const mid = new THREE.Color(0.24, 0.14, 0.32);
+  const bot = new THREE.Color(0.05, 0.02, 0.09);
+  const c = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) {
+    const t = pos.getY(i) / 20;
+    if (t > 0) c.copy(mid).lerp(top, t); else c.copy(mid).lerp(bot, -t);
+    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  env.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide })));
+  const softbox = (w, h, x, y, z, color) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide }));
+    m.position.set(x, y, z); m.lookAt(0, 0, 0); env.add(m);
+  };
+  softbox(10, 8, -8, 9, 10, new THREE.Color(7.0, 5.4, 4.0));
+  softbox(8, 6, 10, 4, 8, new THREE.Color(6.5, 3.0, 4.2));
+  softbox(14, 3, 0, -6, -6, new THREE.Color(2.0, 1.2, 3.2));
+  softbox(6, 10, -10, 2, -8, new THREE.Color(4.0, 2.6, 6.5));
+  scene.environment = pm.fromScene(env, 0.03).texture;
+  pm.dispose();
+})();
+
+scene.add(new THREE.HemisphereLight(0xffd9ec, 0x2a1540, 0.30));
+const key = new THREE.DirectionalLight(0xfff3e8, 0.86); key.position.set(3.5, 5.5, 6); scene.add(key);
+const rim = new THREE.DirectionalLight(0xff9fce, 0.72); rim.position.set(-5, 3, -4); scene.add(rim);
+const rim2 = new THREE.DirectionalLight(0xc9a6ff, 0.30); rim2.position.set(5, 2, -4); scene.add(rim2);
+const fill = new THREE.DirectionalLight(0xb99cff, 0.28); fill.position.set(-4, 1, 5); scene.add(fill);
+const under = new THREE.PointLight(0xffc8a0, 0.16, 25, 2); under.position.set(0, -3, 3); scene.add(under);
+
+/* ---------------- forma del cuerpo ---------------- */
+const BODY_A = 0.92, BODY_H = 1.5, BODY_N = 2.45, BODY_Z = 0.88, GROUND = -1.585;
+
+/* Superelipse: costados casi rectos, base un poco más ancha que la cabeza. */
+function profileAt(th) {
+  const c = Math.cos(th), s = Math.sin(th), e = 2 / BODY_N;
+  const taper = 1 - 0.07 * s;
+  return [BODY_A * taper * Math.pow(Math.abs(c), e), BODY_H * (s < 0 ? -1 : 1) * Math.pow(Math.abs(s), e)];
+}
+function surfaceZ(y) {
+  let prev = null;
+  for (let j = 0; j <= 400; j++) {
+    const p = profileAt(j / 400 * Math.PI / 2);
+    if (prev && prev[1] <= y && p[1] >= y) {
+      const t = (y - prev[1]) / (p[1] - prev[1]);
+      return (prev[0] + (p[0] - prev[0]) * t) * BODY_Z;
+    }
+    prev = p;
+  }
+  return 0.7;
+}
+
+/* ---------------- textura: negro, barriga y cara blancas, ojos felices ---------------- */
+const SHAPES = [
+  [0, -0.62, 0.80, 0.76],
+  [-0.37, 0.70, 0.38, 0.52],
+  [0.37, 0.70, 0.38, 0.52],
+  [0, 0.36, 0.64, 0.30]
+];
+function sdE(x, y, cx, cy, a, b) {
+  const nx = (x - cx) / a, ny = (y - cy) / b, k = Math.sqrt(nx * nx + ny * ny);
+  const h = Math.sqrt((nx / a) * (nx / a) + (ny / b) * (ny / b));
+  return h < 1e-9 ? -Math.min(a, b) : (k - 1) * k / h;
+}
+const cov = (d, aa) => d >= aa / 2 ? 0 : (d <= -aa / 2 ? 1 : 0.5 - d / aa);
+function whiteCoverage(x, y) {
+  let d = 1e9;
+  for (let k = 0; k < 4; k++) { const s = SHAPES[k], v = sdE(x, y, s[0], s[1], s[2], s[3]); if (v < d) d = v; }
+  return cov(d, 0.012);
+}
+function eyeCoverage(x, y) {
+  const cx = x < 0 ? -0.39 : 0.39, cy = 0.565, R = 0.13, lo = 0.436, hi = Math.PI - 0.436;
+  const a = Math.atan2(y - cy, x - cx);
+  const ca = a < lo ? lo : (a > hi ? hi : a);
+  const w = 0.013 + 0.012 * Math.sin((ca - lo) / (hi - lo) * Math.PI);
+  const dx = x - (cx + R * Math.cos(ca)), dy = y - (cy + R * Math.sin(ca));
+  return cov(Math.sqrt(dx * dx + dy * dy) - w, 0.008);
+}
+function makeBodyTexture() {
+  const W = 2048, H = 1024;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d'), img = ctx.createImageData(W, H), d = img.data;
+  const K = [21, 23, 29], Wt = [252, 249, 250], E = [17, 18, 24];
+  const rr = new Float32Array(H), yy = new Float32Array(H);
+  for (let j = 0; j < H; j++) { const v = 1 - (j + 0.5) / H, p = profileAt(-Math.PI / 2 + Math.PI * v); rr[j] = p[0]; yy[j] = p[1]; }
+  const sn = new Float32Array(W), fr = new Uint8Array(W);
+  for (let i = 0; i < W; i++) { const a = ((i + 0.5) / W - 0.5) * 2 * Math.PI; sn[i] = Math.sin(a); fr[i] = Math.cos(a) > 0 ? 1 : 0; }
+  for (let j = 0; j < H; j++) {
+    const y = yy[j], r = rr[j];
+    for (let i = 0; i < W; i++) {
+      const o = (j * W + i) * 4;
+      let wm = 0, em = 0;
+      if (fr[i] && y > -1.45) {
+        const x = r * sn[i];
+        wm = whiteCoverage(x, y);
+        if (wm > 0 && y > 0.3 && y < 0.9 && Math.abs(Math.abs(x) - 0.39) < 0.2) em = eyeCoverage(x, y);
+      }
+      let rch = K[0] + (Wt[0] - K[0]) * wm, gch = K[1] + (Wt[1] - K[1]) * wm, bch = K[2] + (Wt[2] - K[2]) * wm;
+      rch = rch * (1 - em) + E[0] * em; gch = gch * (1 - em) + E[1] * em; bch = bch * (1 - em) + E[2] * em;
+      d[o] = rch; d[o + 1] = gch; d[o + 2] = bch; d[o + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.encoding = THREE.sRGBEncoding;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return tex;
+}
+
+/* ---------------- materiales ---------------- */
+const bodyMat = new THREE.MeshPhysicalMaterial({ map: makeBodyTexture(), roughness: 0.47, metalness: 0, clearcoat: 0.45, clearcoatRoughness: 0.32, envMapIntensity: 0.45 });
+const blackMat = new THREE.MeshPhysicalMaterial({ color: C(0x15171d), roughness: 0.45, metalness: 0, clearcoat: 0.5, clearcoatRoughness: 0.3, envMapIntensity: 0.5 });
+const orangeMat = new THREE.MeshPhysicalMaterial({ color: C(0xff9418), roughness: 0.4, metalness: 0, clearcoat: 0.4, clearcoatRoughness: 0.3, envMapIntensity: 0.45 });
+const mouthMat = new THREE.MeshStandardMaterial({ color: C(0xb81f3a), roughness: 0.6, side: THREE.BackSide });
+const tongueMat = new THREE.MeshStandardMaterial({ color: C(0xff7d90), roughness: 0.5 });
+
+/* ---------------- armado del modelo ---------------- */
+const root = new THREE.Group();
+const squash = new THREE.Group();
+squash.position.y = GROUND;
+root.add(squash);
+const model = new THREE.Group();
+model.position.y = -GROUND;
+squash.add(model);
+scene.add(root);
+
+const sphere = new THREE.SphereGeometry(1, 40, 28);
+const domeGeo = new THREE.SphereGeometry(1, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2);
+const bowlGeo = new THREE.SphereGeometry(1, 40, 20, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+
+/* cuerpo */
+const NSEG = 96, pts = [];
+for (let j = 0; j < NSEG; j++) {
+  const p = profileAt(-Math.PI / 2 + Math.PI * j / (NSEG - 1));
+  pts.push(new THREE.Vector2(Math.max(p[0], 1e-4), p[1]));
+}
+const body = new THREE.Mesh(new THREE.LatheGeometry(pts, 160), bodyMat);
+body.scale.set(1, 1, BODY_Z);
+body.rotation.y = Math.PI;
+model.add(body);
+
+/* aletas */
+const wings = [];
+function makeWing(side) {
+  const pivot = new THREE.Group();
+  pivot.position.set(0.84 * side, 0.15, 0.04);
+  const m = new THREE.Mesh(sphere, blackMat);
+  m.scale.set(0.19, 0.47, 0.12); m.position.y = -0.37; pivot.add(m);
+  pivot.userData = { base: 0.75 * side, side: side };
+  pivot.rotation.z = pivot.userData.base;
+  model.add(pivot); wings.push(pivot);
+}
+makeWing(-1); makeWing(1);
+
+/* patas */
+const feet = [];
+function makeFoot(side) {
+  const g = new THREE.Group();
+  g.position.set(0.46 * side, -1.5, 0.36); g.rotation.y = 0.2 * side;
+  const sole = new THREE.Mesh(sphere, orangeMat); sole.scale.set(0.30, 0.085, 0.40); g.add(sole);
+  [-1, 0, 1].forEach(k => {
+    const t = new THREE.Mesh(sphere, orangeMat);
+    t.scale.set(0.105, 0.075, 0.12); t.position.set(k * 0.17, -0.005, 0.37 - Math.abs(k) * 0.05); g.add(t);
+  });
+  model.add(g); feet.push(g);
+  return g;
+}
+makeFoot(-1); makeFoot(1);
+
+/* pico: cúpula superior fija + mandíbula inferior que gira */
+const beak = new THREE.Group();
+beak.position.set(0, 0.47, surfaceZ(0.47) - 0.05);
+beak.rotation.x = 0.14;
+model.add(beak);
+const upper = new THREE.Mesh(domeGeo, orangeMat); upper.scale.set(0.27, 0.13, 0.27); upper.position.z = 0.18; beak.add(upper);
+const upperIn = new THREE.Mesh(domeGeo, mouthMat); upperIn.scale.set(0.255, 0.115, 0.255); upperIn.position.z = 0.18; beak.add(upperIn);
+const jaw = new THREE.Group(); beak.add(jaw);
+const lower = new THREE.Mesh(bowlGeo, orangeMat); lower.scale.set(0.235, 0.09, 0.22); lower.position.z = 0.16; jaw.add(lower);
+const lowerIn = new THREE.Mesh(bowlGeo, mouthMat); lowerIn.scale.set(0.22, 0.08, 0.205); lowerIn.position.z = 0.16; jaw.add(lowerIn);
+const tongue = new THREE.Mesh(sphere, tongueMat); tongue.scale.set(0.11, 0.03, 0.11); tongue.position.set(0, -0.03, 0.13); jaw.add(tongue);
+const JAW_REST = 0.2, JAW_MAX = 0.62;
+jaw.rotation.x = JAW_REST;
+
+/* sombra suave en el suelo */
+(function () {
+  const sc = document.createElement('canvas'); sc.width = sc.height = 128;
+  const sx = sc.getContext('2d'), gr = sx.createRadialGradient(64, 64, 4, 64, 64, 62);
+  gr.addColorStop(0, 'rgba(4,0,12,0.55)'); gr.addColorStop(0.55, 'rgba(4,0,12,0.22)'); gr.addColorStop(1, 'rgba(4,0,12,0)');
+  sx.fillStyle = gr; sx.fillRect(0, 0, 128, 128);
+  const sh = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 2.6), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sc), transparent: true, depthWrite: false, opacity: 0.8 }));
+  sh.rotation.x = -Math.PI / 2; sh.position.set(0, GROUND - 0.005, 0.12); scene.add(sh);
+})();
+
+/* ---------------- cámara ---------------- */
+const views = {
+  three: { p: [2.9, 1.05, 11.2], l: [0, -0.05, 0] },
+  front: { p: [0, 0.20, 12.4], l: [0, -0.05, 0] },
+  side: { p: [10.8, 0.70, 2.2], l: [0, -0.05, 0] },
+  close: { p: [0.9, 0.65, 6.7], l: [0, 0.45, 0.2] }
+};
+const camPos = new THREE.Vector3(...views.three.p);
+const camLook = new THREE.Vector3(...views.three.l);
+const camTarget = { p: new THREE.Vector3(...views.three.p), l: new THREE.Vector3(...views.three.l) };
+camera.position.copy(camPos); camera.lookAt(camLook);
+
+function setView(name, instant = false) {
+  const v = views[name] || views.three;
+  camTarget.p.set(...v.p); camTarget.l.set(...v.l);
+  tYaw = 0; tPitch = 0;
+  if (instant) { camera.position.copy(camTarget.p); camLook.copy(camTarget.l); camera.lookAt(camLook); }
+}
+
+/* ---------------- audio ---------------- */
+let actx = null, analyser = null, abuf = null, audioSource = null;
+let audioState = 'idle', audioToken = 0;
+const audioBtn = document.getElementById('audioBtn');
+const audioStatus = document.getElementById('audioStatus');
+const fileInput = document.getElementById('file');
+
+function setAudioStatus(msg) { audioStatus.textContent = msg; }
+
+function ensureAudio() {
+  if (!actx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    actx = new AC();
+    analyser = actx.createAnalyser();
+    analyser.fftSize = 512;
+    analyser.smoothingTimeConstant = 0.3;
+    abuf = new Uint8Array(analyser.fftSize);
+    analyser.connect(actx.destination);
+  }
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+
+function stopAudio() {
+  audioToken++;
+  if (audioSource) {
+    const src = audioSource; audioSource = null;
+    try { src.stop(0); } catch (_) {}
+    try { src.disconnect(); } catch (_) {}
+  }
+  audioState = 'idle';
+  audioBtn.textContent = 'Subir tu audio';
+  audioBtn.disabled = false;
+}
+
+async function playAudioFile(file) {
+  if (file.size > 20 * 1024 * 1024) {
+    setAudioStatus('Ese audio pesa más de 20 MB. Prueba con uno más corto.');
+    return;
+  }
+  const ac = ensureAudio();
+  if (!ac) { setAudioStatus('Este navegador no puede reproducir audio.'); return; }
+  stopAudio();
+  const tk = ++audioToken;
+  audioState = 'loading';
+  audioBtn.disabled = true;
+  audioBtn.textContent = 'Preparando…';
+  setAudioStatus('Preparando audio…');
+  try {
+    const data = await file.arrayBuffer();
+    const buffer = await new Promise((res, rej) => {
+      const p = ac.decodeAudioData(data, res, rej);
+      if (p && p.catch) p.catch(rej);
+    });
+    if (tk !== audioToken) return;
+    const src = ac.createBufferSource();
+    src.buffer = buffer;
+    src.connect(analyser);
+    src.onended = () => {
+      if (audioSource !== src) return;
+      audioSource = null;
+      audioState = 'idle';
+      audioBtn.textContent = 'Subir tu audio';
+      audioBtn.disabled = false;
+      setAudioStatus('Listo. Sube otro audio o elige una pose.');
+      setPose('idle', false);
+    };
+    audioSource = src;
+    src.start();
+    audioState = 'playing';
+    audioBtn.disabled = false;
+    audioBtn.textContent = 'Parar';
+    setAudioStatus('♪ ' + file.name);
+    setPose('sing', false);
+  } catch (_) {
+    if (tk !== audioToken) return;
+    audioState = 'idle';
+    audioBtn.disabled = false;
+    audioBtn.textContent = 'Subir tu audio';
+    setAudioStatus('No pude leer ese audio. Prueba con MP3, WAV u OGG.');
+  }
+}
+
+audioBtn.addEventListener('click', () => {
+  if (audioState === 'playing') {
+    stopAudio();
+    setAudioStatus('Audio detenido. Puedes subir otro.');
+    setPose('idle', false);
+    return;
+  }
+  ensureAudio();
+  fileInput.click();
+});
+fileInput.addEventListener('change', () => {
+  const f = fileInput.files && fileInput.files[0];
+  if (!f) return;
+  playAudioFile(f);
+  fileInput.value = '';
+});
+
+/* ---------------- poses / estado ---------------- */
+const state = { pose: 'idle' };
+let T = 0, mouth = 0, energy = 0;
+let yaw = 0, pitch = 0, tYaw = 0, tPitch = 0, drag = false, lx = 0, ly = 0, lastTouch = 0;
+
+function setPose(p, stop = true) {
+  if (stop && audioState === 'playing') {
+    stopAudio();
+    setAudioStatus('Audio detenido.');
+  }
+  state.pose = p;
+  document.querySelectorAll('#hud button[data-pose]').forEach(b => b.classList.toggle('on', b.dataset.pose === p));
+}
+
+/* ---------------- girar con el dedo o el mouse ---------------- */
+canvas.addEventListener('pointerdown', e => {
+  drag = true; lx = e.clientX; ly = e.clientY;
+  canvas.classList.add('dragging');
+  try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+});
+canvas.addEventListener('pointermove', e => {
+  if (!drag) return;
+  tYaw = clamp(tYaw + (e.clientX - lx) * 0.012, -1.4, 1.4);
+  tPitch = clamp(tPitch + (e.clientY - ly) * 0.006, -0.25, 0.25);
+  lx = e.clientX; ly = e.clientY; lastTouch = performance.now();
+});
+const endDrag = () => { drag = false; canvas.classList.remove('dragging'); lastTouch = performance.now(); };
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+
+/* ---------------- UI ---------------- */
+document.querySelectorAll('#hud button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.pose) setPose(btn.dataset.pose);
+    if (btn.dataset.view) setView(btn.dataset.view);
+  });
+});
+
+const q = new URLSearchParams(location.search);
+if (q.get('pose')) setPose(q.get('pose'), false);
+if (q.get('view')) setView(q.get('view'), true);
+if (q.get('hud') === '0') {
+  document.getElementById('hud').style.display = 'none';
+  document.getElementById('audioBar').style.display = 'none';
+  document.getElementById('hint').style.display = 'none';
+}
+
+/* ---------------- animación ---------------- */
+const clock = new THREE.Clock();
+
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  T += dt;
+  const t = T;
+  const pose = state.pose;
+  const audioOn = audioState === 'playing';
+  const calm = reduceMotion ? 0.25 : 1;
+
+  /* boca: audio real > canto sintético > reposo */
+  let target = 0;
+  if (audioOn && analyser) {
+    analyser.getByteTimeDomainData(abuf);
+    let sum = 0;
+    for (let i = 0; i < abuf.length; i++) { const v = (abuf[i] - 128) / 128; sum += v * v; }
+    const rms = Math.sqrt(sum / abuf.length);
+    target = clamp((rms - 0.012) * 6.5, 0, 1);
+  } else if (pose === 'sing') {
+    const gate = 0.35 + 0.65 * smooth(-0.25, 0.35, Math.sin(t * 2.3));
+    target = (0.18 + 0.55 * Math.abs(Math.sin(t * 7.4))) * gate;
+  } else if (pose === 'dance') {
+    target = 0.10 + 0.24 * Math.abs(Math.sin(t * 5.2));
+  }
+  mouth += (target - mouth) * Math.min(1, dt * (target > mouth ? 28 : 14));
+  jaw.rotation.x = JAW_REST + mouth * (JAW_MAX - JAW_REST);
+
+  const energyTarget = (audioOn || pose === 'sing' || pose === 'dance') ? 1 : 0;
+  energy += (energyTarget - energy) * Math.min(1, dt * 6);
+
+  const k = damp(7, dt);
+  const breath = Math.sin(t * 1.8);
+  const sx = 1 - 0.006 * breath * calm - 0.02 * mouth;
+  const sy = 1 + 0.012 * breath * calm + 0.035 * mouth;
+  squash.scale.set(sx, sy, sx);
+
+  const bob = pose === 'walk' ? Math.abs(Math.sin(t * 5)) * 0.02 : (pose === 'dance' ? Math.abs(Math.sin(t * 5.2)) * 0.03 : 0);
+  root.position.y = 0.05 * mouth + bob;
+
+  let sway = 0.018 * Math.sin(t * 1.1) * calm + 0.03 * Math.sin(t * 5.2) * energy;
+  if (pose === 'dance') sway += 0.05 * Math.sin(t * 5.2) * calm;
+  if (pose === 'walk') sway += 0.04 * Math.sin(t * 5);
+  model.rotation.z = lerp(model.rotation.z, sway, k);
+
+  /* aletas */
+  const baseL = wings[0].userData.base, baseR = wings[1].userData.base;
+  let flap = 0.04 * Math.sin(t * 1.3) * calm;
+  let wingXR = 0, liftR = 0;
+  if (pose === 'sing') {
+    flap = 0.10 + 0.22 * mouth + 0.06 * energy * Math.sin(t * 9);
+  } else if (pose === 'dance') {
+    flap = 0.16 + 0.18 * mouth + 0.10 * Math.sin(t * 5.2);
+  } else if (pose === 'walk') {
+    flap = 0.07 * Math.sin(t * 5);
+  } else if (pose === 'wave') {
+    flap = 0.05 + 0.04 * Math.sin(t * 8.4);
+    liftR = 0.12;
+    wingXR = -0.45 + 0.15 * Math.sin(t * 8.4);
+  }
+  wings[0].rotation.z = lerp(wings[0].rotation.z, baseL - flap, k);
+  wings[1].rotation.z = lerp(wings[1].rotation.z, baseR + flap + liftR, k);
+  wings[0].rotation.x = lerp(wings[0].rotation.x, 0, k);
+  wings[1].rotation.x = lerp(wings[1].rotation.x, wingXR, k);
+
+  /* patas */
+  const stepL = pose === 'walk' ? Math.max(0, Math.sin(t * 5)) * 0.09 : 0;
+  const stepR = pose === 'walk' ? Math.max(0, -Math.sin(t * 5)) * 0.09 : 0;
+  feet[0].position.y = lerp(feet[0].position.y, -1.5 + stepL, k);
+  feet[1].position.y = lerp(feet[1].position.y, -1.5 + stepR, k);
+  feet[0].rotation.x = lerp(feet[0].rotation.x, stepL * 1.6, k);
+  feet[1].rotation.x = lerp(feet[1].rotation.x, stepR * 1.6, k);
+
+  /* giro suave del cuerpo */
+  if (!drag && performance.now() - lastTouch > 1600) { tYaw *= 1 - Math.min(1, dt * 2.2); tPitch *= 1 - Math.min(1, dt * 2.2); }
+  yaw += (tYaw - yaw) * Math.min(1, dt * 10);
+  pitch += (tPitch - pitch) * Math.min(1, dt * 10);
+  root.rotation.y = yaw + 0.06 * Math.sin(t * 0.6) * calm;
+  root.rotation.x = pitch;
+
+  camera.position.lerp(camTarget.p, damp(4.5, dt));
+  camLook.lerp(camTarget.l, damp(4.5, dt));
+  camera.lookAt(camLook);
+  stars.rotation.y += dt * 0.004;
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+addEventListener('resize', () => {
+  fitCamera();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+window.__penguin = {
+  state,
+  setPose(p, stop = false) { setPose(p, stop); },
+  setView(v, instant = true) { setView(v, instant); },
+  info() {
+    return {
+      pose: state.pose,
+      jaw: +jaw.rotation.x.toFixed(2),
+      mouth: +mouth.toFixed(2),
+      audio: audioState,
+      wingR: [+wings[1].rotation.x.toFixed(2), +wings[1].rotation.z.toFixed(2)],
+      t: +T.toFixed(2)
+    };
+  }
+};
+
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
