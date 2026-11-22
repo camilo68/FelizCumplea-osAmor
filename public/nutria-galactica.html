@@ -283,14 +283,15 @@ const CONFIG = {
   /* Para usar la canción elegida, coloca el archivo en public/cancion.mp3.
      Si no existe, Pingu canta sobre la cajita de música romántica. */
   song: {
-    title: 'Para ti, mi Mamacita Hermosa',
+    title: 'En Tu Día · Para ti, Karen 🎵',
     lyrics: [
-      'Si la noche se hace larga,',
-      'yo te canto desde aquí…',
-      'cada estrella es un “te quiero”',
-      'que guardé para ti. 💗',
-      'Duerme tranquila, mi amor,',
-      'que mañana te escribo otra vez. ✨'
+      'Celebremos, mi amor, con gusto…',
+      'este día de placer y alegría, 💗',
+      'Qué linda está la mañana',
+      'en que vengo a saludarte… ✨',
+      'El día en que tú naciste',
+      'nacieron todas las flores. 🌸',
+      '¡Feliz cumpleaños, mi vida hermosa! 🎂'
     ]
   }
 };
@@ -608,17 +609,20 @@ function buildPenguin() {
   root.add(rig); rig.add(squash); squash.add(model);
   rig.scale.setScalar(0.82);
 
-  /* medidas del cuerpo: las mismas del estudio que aprobaste */
-  const BODY_A = 0.92, BODY_H = 1.5, BODY_N = 2.45, BODY_Z = 0.88, GROUND = -1.585;
+  /* medidas del cuerpo: silueta tierna y gordita estilo chibi */
+  const BODY_A = 0.98, BODY_H = 1.45, BODY_N = 2.4, BODY_Z = 0.93, GROUND = -1.48;
   squash.position.y = GROUND; model.position.y = -GROUND;
 
   const C = hex => new THREE.Color(hex).convertSRGBToLinear();
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
 
-  /* Superelipse: costados casi rectos, base un poco más ancha que la cabeza. */
+  /* Superelipse aperada: cabeza redondeada en domo y barriga gordita */
   function profileAt(th) {
-    const c = Math.cos(th), s = Math.sin(th), e = 2 / BODY_N;
-    const taper = 1 - 0.07 * s;
+    const c = Math.cos(th), s = Math.sin(th);
+    const isTop = s > 0;
+    const n = isTop ? 2.15 : 2.55;
+    const e = 2 / n;
+    const taper = isTop ? (1 - 0.15 * s) : (1 + 0.08 * Math.abs(s));
     return [BODY_A * taper * Math.pow(Math.abs(c), e), BODY_H * (s < 0 ? -1 : 1) * Math.pow(Math.abs(s), e)];
   }
   function surfaceZ(y) {
@@ -634,12 +638,12 @@ function buildPenguin() {
     return 0.7;
   }
 
-  /* textura: negro, barriga y cara blancas, ojos felices cerrados */
+  /* textura: antifaz blanco con dos grandes lóbulos y entrada en V en la frente, ojos felices y barriga redonda */
   const SHAPES = [
-    [0, -0.62, 0.80, 0.76],
-    [-0.37, 0.70, 0.38, 0.52],
-    [0.37, 0.70, 0.38, 0.52],
-    [0, 0.36, 0.64, 0.30]
+    [0, -0.52, 0.78, 0.78],      // barriguita blanca ancha y suave
+    [-0.34, 0.62, 0.35, 0.44],   // parche blanco mejilla/ojo izquierdo
+    [0.34, 0.62, 0.35, 0.44],    // parche blanco mejilla/ojo derecho
+    [0, 0.20, 0.52, 0.28]        // puente suave bajo el pico
   ];
   function sdE(x, y, cx, cy, a, b) {
     const nx = (x - cx) / a, ny = (y - cy) / b, k = Math.sqrt(nx * nx + ny * ny);
@@ -650,21 +654,23 @@ function buildPenguin() {
   function whiteCoverage(x, y) {
     let d = 1e9;
     for (let k = 0; k < 4; k++) { const s = SHAPES[k], v = sdE(x, y, s[0], s[1], s[2], s[3]); if (v < d) d = v; }
-    return cov(d, 0.012);
+    return cov(d, 0.016);
   }
   function eyeCoverage(x, y) {
-    const cx = x < 0 ? -0.39 : 0.39, cy = 0.565, R = 0.13, lo = 0.436, hi = Math.PI - 0.436;
+    const cx = x < 0 ? -0.34 : 0.34, cy = 0.62, R = 0.14;
     const a = Math.atan2(y - cy, x - cx);
+    const lo = 0.488, hi = Math.PI - 0.488; // arcos sonrientes ⌒ ⌒
     const ca = a < lo ? lo : (a > hi ? hi : a);
-    const w = 0.013 + 0.012 * Math.sin((ca - lo) / (hi - lo) * Math.PI);
+    const tRatio = (ca - lo) / (hi - lo);
+    const w = 0.022 + 0.016 * Math.sin(tRatio * Math.PI); // trazo adorable y expresivo
     const dx = x - (cx + R * Math.cos(ca)), dy = y - (cy + R * Math.sin(ca));
-    return cov(Math.sqrt(dx * dx + dy * dy) - w, 0.008);
+    return cov(Math.sqrt(dx * dx + dy * dy) - w, 0.009);
   }
   function makeBodyTexture() {
     const W = 2048, H = 1024;
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d'), img = ctx.createImageData(W, H), d = img.data;
-    const K = [21, 23, 29], Wt = [252, 249, 250], E = [17, 18, 24];
+    const K = [22, 24, 31], Wt = [254, 252, 253], E = [18, 19, 24];
     const rr = new Float32Array(H), yy = new Float32Array(H);
     for (let j = 0; j < H; j++) { const v = 1 - (j + 0.5) / H, p = profileAt(-Math.PI / 2 + Math.PI * v); rr[j] = p[0]; yy[j] = p[1]; }
     const sn = new Float32Array(W), fr = new Uint8Array(W);
@@ -677,7 +683,7 @@ function buildPenguin() {
         if (fr[i] && y > -1.45) {
           const x = r * sn[i];
           wm = whiteCoverage(x, y);
-          if (wm > 0 && y > 0.3 && y < 0.9 && Math.abs(Math.abs(x) - 0.39) < 0.2) em = eyeCoverage(x, y);
+          if (wm > 0 && y > 0.35 && y < 0.95 && Math.abs(Math.abs(x) - 0.34) < 0.22) em = eyeCoverage(x, y);
         }
         let rch = K[0] + (Wt[0] - K[0]) * wm, gch = K[1] + (Wt[1] - K[1]) * wm, bch = K[2] + (Wt[2] - K[2]) * wm;
         rch = rch * (1 - em) + E[0] * em; gch = gch * (1 - em) + E[1] * em; bch = bch * (1 - em) + E[2] * em;
@@ -692,11 +698,11 @@ function buildPenguin() {
   }
 
   /* materiales */
-  const bodyMat = new THREE.MeshPhysicalMaterial({ map: makeBodyTexture(), roughness: 0.50, metalness: 0, clearcoat: 0.38, clearcoatRoughness: 0.34, envMapIntensity: 0.35 });
-  const blackMat = new THREE.MeshPhysicalMaterial({ color: C(0x15171d), roughness: 0.48, metalness: 0, clearcoat: 0.42, clearcoatRoughness: 0.30, envMapIntensity: 0.38 });
-  const orangeMat = new THREE.MeshPhysicalMaterial({ color: C(0xff9418), roughness: 0.42, metalness: 0, clearcoat: 0.35, clearcoatRoughness: 0.30, envMapIntensity: 0.35 });
-  const mouthMat = new THREE.MeshStandardMaterial({ color: C(0xb81f3a), roughness: 0.6, side: THREE.BackSide });
-  const tongueMat = new THREE.MeshStandardMaterial({ color: C(0xff7d90), roughness: 0.5 });
+  const bodyMat = new THREE.MeshPhysicalMaterial({ map: makeBodyTexture(), roughness: 0.45, metalness: 0, clearcoat: 0.36, clearcoatRoughness: 0.28, envMapIntensity: 0.40 });
+  const blackMat = new THREE.MeshPhysicalMaterial({ color: C(0x16181f), roughness: 0.45, metalness: 0, clearcoat: 0.38, clearcoatRoughness: 0.26, envMapIntensity: 0.40 });
+  const orangeMat = new THREE.MeshPhysicalMaterial({ color: C(0xff8f18), roughness: 0.38, metalness: 0, clearcoat: 0.32, clearcoatRoughness: 0.24, envMapIntensity: 0.40 });
+  const mouthMat = new THREE.MeshStandardMaterial({ color: C(0xca2546), roughness: 0.5, side: THREE.BackSide });
+  const tongueMat = new THREE.MeshStandardMaterial({ color: C(0xff758e), roughness: 0.45 });
 
   /* cuerpo */
   const NSEG = 96, pts = [];
@@ -714,10 +720,10 @@ function buildPenguin() {
   const wings = [];
   function makeWing(side) {
     const pivot = new THREE.Group();
-    pivot.position.set(0.84 * side, 0.15, 0.04);
+    pivot.position.set(0.88 * side, 0.20, 0.02);
     const m = new THREE.Mesh(sphere, blackMat);
-    m.scale.set(0.19, 0.47, 0.12); m.position.y = -0.37; pivot.add(m);
-    pivot.userData = { base: 0.75 * side, side: side };
+    m.scale.set(0.20, 0.52, 0.14); m.position.y = -0.36; pivot.add(m);
+    pivot.userData = { base: 0.65 * side, side: side };
     pivot.rotation.z = pivot.userData.base;
     model.add(pivot); wings.push(pivot);
   }
@@ -727,30 +733,30 @@ function buildPenguin() {
   const feet = [];
   function makeFoot(side) {
     const g = new THREE.Group();
-    g.position.set(0.46 * side, -1.5, 0.36); g.rotation.y = 0.2 * side;
-    const sole = new THREE.Mesh(sphere, orangeMat); sole.scale.set(0.30, 0.085, 0.40); g.add(sole);
+    g.position.set(0.44 * side, -1.42, 0.34); g.rotation.y = 0.18 * side;
+    const sole = new THREE.Mesh(sphere, orangeMat); sole.scale.set(0.32, 0.09, 0.38); g.add(sole);
     [-1, 0, 1].forEach(k => {
       const t = new THREE.Mesh(sphere, orangeMat);
-      t.scale.set(0.105, 0.075, 0.12); t.position.set(k * 0.17, -0.005, 0.37 - Math.abs(k) * 0.05); g.add(t);
+      t.scale.set(0.125, 0.085, 0.15); t.position.set(k * 0.17, -0.005, 0.36 - Math.abs(k) * 0.04); g.add(t);
     });
     model.add(g); feet.push(g);
   }
   makeFoot(-1); makeFoot(1);
 
-  /* pico: cúpula superior fija y mandíbula inferior que se abre */
+  /* pico: cúpula superior suave y mandíbula inferior sonriente y abierta */
   const domeGeo = new THREE.SphereGeometry(1, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2);
   const bowlGeo = new THREE.SphereGeometry(1, 40, 20, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
   const beak = new THREE.Group();
-  beak.position.set(0, 0.47, surfaceZ(0.47) - 0.05);
-  beak.rotation.x = 0.14;
+  beak.position.set(0, 0.44, surfaceZ(0.44) - 0.04);
+  beak.rotation.x = 0.08;
   model.add(beak);
-  const upper = new THREE.Mesh(domeGeo, orangeMat); upper.scale.set(0.27, 0.13, 0.27); upper.position.z = 0.18; beak.add(upper);
-  const upperIn = new THREE.Mesh(domeGeo, mouthMat); upperIn.scale.set(0.255, 0.115, 0.255); upperIn.position.z = 0.18; beak.add(upperIn);
+  const upper = new THREE.Mesh(domeGeo, orangeMat); upper.scale.set(0.31, 0.14, 0.30); upper.position.z = 0.16; beak.add(upper);
+  const upperIn = new THREE.Mesh(domeGeo, mouthMat); upperIn.scale.set(0.29, 0.12, 0.28); upperIn.position.z = 0.16; beak.add(upperIn);
   const jaw = new THREE.Group(); beak.add(jaw);
-  const lower = new THREE.Mesh(bowlGeo, orangeMat); lower.scale.set(0.235, 0.09, 0.22); lower.position.z = 0.16; jaw.add(lower);
-  const lowerIn = new THREE.Mesh(bowlGeo, mouthMat); lowerIn.scale.set(0.22, 0.08, 0.205); lowerIn.position.z = 0.16; jaw.add(lowerIn);
-  const tongue = new THREE.Mesh(sphere, tongueMat); tongue.scale.set(0.11, 0.03, 0.11); tongue.position.set(0, -0.03, 0.13); jaw.add(tongue);
-  const JAW_REST = 0.2, JAW_MAX = 0.62;
+  const lower = new THREE.Mesh(bowlGeo, orangeMat); lower.scale.set(0.27, 0.11, 0.24); lower.position.z = 0.14; jaw.add(lower);
+  const lowerIn = new THREE.Mesh(bowlGeo, mouthMat); lowerIn.scale.set(0.25, 0.095, 0.22); lowerIn.position.z = 0.14; jaw.add(lowerIn);
+  const tongue = new THREE.Mesh(sphere, tongueMat); tongue.scale.set(0.13, 0.035, 0.12); tongue.position.set(0, -0.02, 0.12); jaw.add(tongue);
+  const JAW_REST = 0.28, JAW_MAX = 0.68;
   jaw.rotation.x = JAW_REST;
 
   /* ancla del globo: arriba de la cabeza */
