@@ -128,7 +128,7 @@ body.show-brand #brand{opacity:1;transform:none}
 #serenade.show{opacity:1;visibility:visible;transform:translate(-50%,0) scale(1)}
 #serenade .songWho{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#ffc2dd;text-shadow:0 1px 10px rgba(0,0,0,.6)}
 #lyricLine{
-  font-family:var(--font-script);font-weight:700;font-size:clamp(1.7rem,6.2vw,2.6rem);line-height:1.25;min-height:2.5em;margin:6px 0 12px;
+  font-family:var(--font-script);font-weight:700;font-size:clamp(1.5rem,5.6vw,2.45rem);line-height:1.22;min-height:2.44em;margin:6px 0 12px;
   color:#fff;text-shadow:0 0 18px rgba(255,77,141,.95),0 0 44px rgba(255,77,141,.55);transition:opacity .3s;
 }
 #songBars{display:flex;justify-content:center;align-items:flex-end;gap:4px;height:22px;margin-bottom:10px}
@@ -218,7 +218,7 @@ body.show-brand #brand{opacity:1;transform:none}
 <div id="flash"></div>
 
 <div id="serenade" aria-live="polite">
-  <p class="songWho">Pingu te canta</p>
+  <p class="songWho">Pingu te canta · En Tu Día</p>
   <p id="lyricLine"></p>
   <div id="songBars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
   <button class="pill" id="songStop" type="button">Saltar canción ›</button>
@@ -285,13 +285,30 @@ const CONFIG = {
   song: {
     title: 'En Tu Día · Para ti, Karen 🎵',
     lyrics: [
-      'Celebremos, mi amor, con gusto…',
-      'este día de placer y alegría, 💗',
-      'Qué linda está la mañana',
-      'en que vengo a saludarte… ✨',
-      'El día en que tú naciste',
-      'nacieron todas las flores. 🌸',
-      '¡Feliz cumpleaños, mi vida hermosa! 🎂'
+      'Celebremos con gusto, señores,',
+      'este día de placer tan dichoso,',
+      'que en tu santo te encuentres gustoso',
+      'y tranquilo tu fiel corazón.',
+      'Vive, vive feliz en el mundo,',
+      'sin que nadie perturbe tu mente;',
+      'te pondremos un laurel en tu frente,',
+      'unas conchas y perlas del mar.',
+      'Dios bendiga este día venturoso',
+      'y bendiga la prenda que adoro;',
+      'hoy los ángeles cantan en coro',
+      'por los años que vas a cumplir.',
+      'Las estrellas se visten de gala',
+      'y la luna se llena de encanto',
+      'al saber que hoy es día de tu santo;',
+      'Dios bendiga este día de placer.',
+      'Solamente un recuerdo ha quedado',
+      'de la infancia que al fin ya pasó;',
+      'celebremos este día tan dichoso,',
+      'tus amigos, parientes y yo.',
+      'Celebremos con gusto, señores,',
+      'este día de placer tan dichoso,',
+      'que en tu santo te encuentres gustoso',
+      'y tranquilo tu fiel corazón.'
     ]
   }
 };
@@ -434,7 +451,9 @@ const COMMON = `
     vColor = col;
     float a0 = (mix(0.13, 0.46, uProg) + sc * 0.5) * (0.82 + 0.18 * sin(uTime * 2.0 + seed * 6.28));
     vAlpha = mix(a0, 0.95, e);
-    sz = mix(0.17, aMisc.x, e);
+    float tw = 0.74 + 0.26 * sin(uTime * (1.1 + seed * 2.4) + seed * 31.0);
+    vAlpha *= mix(1.0, tw, e);
+    sz = mix(0.17, aMisc.x, e) * mix(1.0, 0.82 + 0.36 * tw, e);
     return p;
   }`;
 const POINT_FRAG = `
@@ -457,7 +476,7 @@ function pointsMat(vertexBody, extraUniforms, extraDecl) {
 }
 
 /* ---------------- fondo de estrellas ---------------- */
-const bgMat = (() => {
+const bgStars = (() => {
   const N = 1800, pos = new Float32Array(N * 3), ph = new Float32Array(N), sz = new Float32Array(N);
   for (let i = 0; i < N; i++) {
     const u = Math.random() * 2 - 1, a = Math.random() * TAU, s = Math.sqrt(1 - u * u), r = 420;
@@ -475,13 +494,13 @@ const bgMat = (() => {
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
         gl_Position = projectionMatrix * mv;
         gl_PointSize = clamp(aSize * uScale / -mv.z * 1.4, 1.0, 5.0);
-        vColor = vec3(1.0, 0.95, 1.0);
-        vAlpha = 0.35 + 0.65 * (0.5 + 0.5 * sin(uTime * 1.3 + aPhase * 3.0));
+        vColor = sin(aPhase * 7.0) > 0.55 ? vec3(1.0, 0.82, 0.95) : vec3(0.92, 0.88, 1.0);
+        vAlpha = 0.28 + 0.72 * (0.5 + 0.5 * sin(uTime * 2.1 + aPhase * 3.0));
       }`,
     fragmentShader: POINT_FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
   });
   const p = new THREE.Points(g, m); p.frustumCulled = false; scene.add(p);
-  return m;
+  return p;
 })();
 
 /* ---------------- galaxia ---------------- */
@@ -504,8 +523,12 @@ const GAL_R = 72, GAL_N = 34000, HEART_N = 9000;
   addAttr(g, 'position', new Float32Array(N * 3), 3); addAttr(g, 'aGal', gal, 4); addAttr(g, 'aMisc', misc, 3); addAttr(g, 'aColor', col, 3); addAttr(g, 'aStart', start, 3);
   const m = pointsMat(`
     float a = aGal.y + uGalTime * aGal.w;
-    vec3 fin = vec3(cos(a) * aGal.x, aGal.z, sin(a) * aGal.x);
-    vec3 p = run(fin, sz);`, null, 'attribute vec4 aGal;');
+    float wob = sin(uTime * 0.5 + aGal.x * 0.13 + 1.5) * 0.9;
+    float br = 1.0 + 0.012 * sin(uTime * 0.37 + aGal.x * 0.09);
+    vec3 fin = vec3(cos(a) * aGal.x * br, aGal.z + wob, sin(a) * aGal.x * br);
+    vec3 p = run(fin, sz);
+    float wave = 0.5 + 0.5 * sin(aGal.x * 0.33 - uGalTime * 1.15 + aGal.y * 1.7);
+    vAlpha *= 0.86 + 0.22 * wave;`, null, 'attribute vec4 aGal;');
   const p = new THREE.Points(g, m); p.frustumCulled = false; scene.add(p);
 }
 const coreGlow = glowSprite([190, 100, 255], 90, 0.42); scene.add(coreGlow);
@@ -539,6 +562,218 @@ const U_HEART = { uBeat: { value: 1 }, uYaw: { value: 0 } };
   const p = new THREE.Points(g, m); p.frustumCulled = false; scene.add(p);
 }
 const heartGlow = glowSprite([255, 60, 130], 30, 0.6); scene.add(heartGlow);
+const coreHalo = glowSprite([255, 150, 220], 150, 0.14);
+coreHalo.position.set(0, 0.8, -2); scene.add(coreHalo);
+
+/* ---------------- vida de la galaxia: nebulosas, luciérnagas, polvo y estrellas fugaces ---------------- */
+const nebulaTex = (() => {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 512;
+  const x = cv.getContext('2d');
+  for (let i = 0; i < 34; i++) {
+    const a = Math.random() * TAU, rr = Math.pow(Math.random(), 0.65) * 165;
+    const bx = 256 + Math.cos(a) * rr, by = 256 + Math.sin(a) * rr * 0.78, r = 28 + Math.random() * 92;
+    const g = x.createRadialGradient(bx, by, 0, bx, by, r);
+    g.addColorStop(0, 'rgba(255,255,255,.17)');
+    g.addColorStop(.45, 'rgba(255,255,255,.055)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(bx - r, by - r, r * 2, r * 2);
+  }
+  x.globalCompositeOperation = 'destination-in';
+  const mask = x.createRadialGradient(256, 256, 0, 256, 256, 252);
+  mask.addColorStop(0, 'rgba(0,0,0,.95)'); mask.addColorStop(.55, 'rgba(0,0,0,.55)'); mask.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = mask; x.fillRect(0, 0, 512, 512);
+  return new THREE.CanvasTexture(cv);
+})();
+const nebulas = [];
+[
+  [-52, 7, -52, 118, [255, 120, 190], 0.22],
+  [-16, 11, -38, 96, [155, 105, 255], 0.2],
+  [22, 5, -48, 108, [255, 150, 210], 0.18],
+  [56, 9, -56, 124, [130, 120, 255], 0.2],
+  [4, 13, -34, 86, [200, 130, 255], 0.16]
+].forEach(([x, y, z, size, rgb, op], i) => {
+  const mat = new THREE.SpriteMaterial({
+    map: nebulaTex, color: new THREE.Color(`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`),
+    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0
+  });
+  const s = new THREE.Sprite(mat);
+  s.position.set(x, y, z); s.scale.set(size, size * 0.72, 1);
+  s.userData = { base: op, size, ph: i * 1.73, spin: (i % 2 ? 1 : -1) * (0.006 + 0.004 * (i % 3)) };
+  scene.add(s); nebulas.push(s);
+});
+
+const fireflies = [];
+(() => {
+  const tex = glowTex(255, 210, 240);
+  const cols = [[255, 140, 200], [190, 130, 255], [255, 220, 245], [150, 160, 255]];
+  for (let i = 0; i < 9; i++) {
+    const rgb = cols[i % cols.length];
+    const m = new THREE.SpriteMaterial({
+      map: tex, color: new THREE.Color(`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`),
+      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0
+    });
+    const s = new THREE.Sprite(m);
+    s.userData = {
+      r: 9 + Math.random() * 18, ph: Math.random() * TAU, sp: 0.1 + Math.random() * 0.16,
+      y: 1.5 + Math.random() * 5, bob: 0.8 + Math.random() * 2.2, size: 1.4 + Math.random() * 1.6
+    };
+    scene.add(s); fireflies.push(s);
+  }
+})();
+
+const dustMat = (() => {
+  const N = 620, pos = new Float32Array(N * 3), ph = new Float32Array(N), sz = new Float32Array(N), hue = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const r = 8 + Math.pow(Math.random(), 0.6) * 72, a = Math.random() * TAU;
+    pos[i * 3] = Math.cos(a) * r;
+    pos[i * 3 + 1] = -7 + Math.random() * 28;
+    pos[i * 3 + 2] = Math.sin(a) * r;
+    ph[i] = Math.random() * TAU; sz[i] = 0.035 + Math.random() * 0.1; hue[i] = Math.random();
+  }
+  const g = new THREE.BufferGeometry();
+  addAttr(g, 'position', pos, 3); addAttr(g, 'aPhase', ph, 1); addAttr(g, 'aSize', sz, 1); addAttr(g, 'aHue', hue, 1);
+  const m = new THREE.ShaderMaterial({
+    uniforms: { uTime: U.uTime, uScale: U.uScale, uFx: { value: 0 } },
+    vertexShader: `
+      attribute float aPhase; attribute float aSize; attribute float aHue;
+      uniform float uTime, uScale, uFx;
+      varying vec3 vColor; varying float vAlpha;
+      void main(){
+        vec3 p = position;
+        p.x += sin(uTime * 0.13 + aPhase * 6.283 + position.z * 0.02) * 2.4;
+        p.y += sin(uTime * 0.19 + aPhase * 9.7 + position.x * 0.03) * 1.7;
+        p.z += cos(uTime * 0.11 + aPhase * 7.1 + position.y * 0.04) * 2.4;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = clamp(aSize * uScale / -mv.z, 0.7, 6.0);
+        vColor = mix(vec3(1.0, 0.74, 0.9), vec3(0.72, 0.62, 1.0), aHue);
+        vAlpha = (0.22 + 0.5 * (0.5 + 0.5 * sin(uTime * 1.5 + aPhase * 19.0))) * uFx;
+      }`,
+    fragmentShader: POINT_FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+  });
+  const p = new THREE.Points(g, m); p.frustumCulled = false; scene.add(p);
+  return m;
+})();
+
+const comets = [];
+(() => {
+  const tex = glowTex(255, 235, 250);
+  for (let c = 0; c < 3; c++) {
+    const g = new THREE.Group(); g.visible = false;
+    const parts = [];
+    for (let i = 0; i < 11; i++) {
+      const k = i / 10;
+      const mat = new THREE.SpriteMaterial({
+        map: tex, color: new THREE.Color(i < 2 ? 0xffffff : 0xffb3da),
+        transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0
+      });
+      const s = new THREE.Sprite(mat);
+      const base = 1.5 * Math.pow(1 - k, 1.25) + 0.16;
+      s.scale.setScalar(base);
+      s.userData = { k, base };
+      g.add(s); parts.push(s);
+    }
+    scene.add(g);
+    comets.push({
+      g, parts, active: false, wait: 1.5 + c * 3.7 + Math.random() * 3, t: 0, travel: 1,
+      speed: 20, dir: new THREE.Vector3(), start: new THREE.Vector3(), head: new THREE.Vector3()
+    });
+  }
+})();
+
+const cometTmp = { fwd: new THREE.Vector3(), right: new THREE.Vector3(), up: new THREE.Vector3() };
+function spawnComet(c) {
+  const fwd = cometTmp.fwd, right = cometTmp.right, up = cometTmp.up;
+  camera.getWorldDirection(fwd);
+  right.crossVectors(fwd, camera.up).normalize();
+  up.crossVectors(right, fwd).normalize();
+  const side = Math.random() < 0.5 ? -1 : 1;
+  const dist = 26 + Math.random() * 12;
+  const halfH = Math.tan(camera.fov * Math.PI / 360) * dist, halfW = halfH * camera.aspect;
+  c.start.copy(camera.position).addScaledVector(fwd, dist)
+    .addScaledVector(right, side * (halfW + 4))
+    .addScaledVector(up, halfH * 0.5 + Math.random() * halfH * 0.25);
+  c.dir.copy(right).multiplyScalar(-side).addScaledVector(up, -0.32 - Math.random() * 0.22).normalize();
+  c.travel = 1.25 + Math.random() * 0.75;
+  c.speed = (halfW * 2.6) / c.travel;
+  c.t = 0; c.active = true; c.g.visible = true;
+}
+function updateComets(dt, on) {
+  comets.forEach(c => {
+    if (!c.active) {
+      c.wait -= dt;
+      if (c.wait <= 0 && on > 0.5) spawnComet(c);
+      return;
+    }
+    c.t += dt;
+    const u = clamp(c.t / c.travel, 0, 1);
+    const fade = smooth(0, 0.12, u) * (1 - smooth(0.72, 1, u));
+    c.head.copy(c.start).addScaledVector(c.dir, c.speed * c.t);
+    const trail = Math.min(9, Math.max(4.5, c.speed * 0.5));
+    c.parts.forEach(s => {
+      const k = s.userData.k;
+      s.position.copy(c.head).addScaledVector(c.dir, -trail * k);
+      s.material.opacity = fade * (1 - k * 0.82) * on * 0.9;
+      s.scale.setScalar(s.userData.base * (0.8 + 0.2 * fade));
+    });
+    if (c.t >= c.travel) {
+      c.active = false; c.g.visible = false;
+      c.wait = 2.5 + Math.random() * 7;
+    }
+  });
+}
+function updateGalaxyFX(dt, T, on) {
+  nebulas.forEach(s => {
+    const d = s.userData;
+    s.material.opacity = d.base * on * (0.72 + 0.28 * Math.sin(T * 0.16 + d.ph));
+    s.material.rotation += dt * d.spin;
+    const k = 1 + 0.025 * Math.sin(T * 0.11 + d.ph * 2);
+    s.scale.set(d.size * k, d.size * 0.72 * k, 1);
+  });
+  fireflies.forEach(s => {
+    const d = s.userData, a = T * d.sp + d.ph;
+    const r = d.r + Math.sin(T * 0.32 + d.ph) * 1.6;
+    s.position.set(Math.cos(a) * r, d.y + Math.sin(T * 0.45 + d.ph * 2) * d.bob, Math.sin(a) * r * 0.86);
+    const tw = 0.5 + 0.5 * Math.sin(T * 1.6 + d.ph * 5);
+    s.material.opacity = on * (0.28 + 0.6 * tw);
+    s.scale.setScalar(d.size * (0.75 + 0.35 * tw));
+  });
+  dustMat.uniforms.uFx.value = on;
+  updateComets(dt, on);
+}
+
+/* ---------------- notas que salen del pico mientras canta ---------------- */
+const noteSprites = [];
+(() => {
+  const texs = ['♪', '♫'].map(glyph => {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+    const x = cv.getContext('2d');
+    x.font = '700 92px Georgia, "Segoe UI Symbol", serif';
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.shadowColor = 'rgba(255,90,160,.95)'; x.shadowBlur = 22;
+    x.fillStyle = '#fff'; x.fillText(glyph, 64, 68); x.fillText(glyph, 64, 68);
+    return new THREE.CanvasTexture(cv);
+  });
+  for (let i = 0; i < 6; i++) {
+    const m = new THREE.SpriteMaterial({
+      map: texs[i % 2], color: 0xffd9ea, transparent: true, depthWrite: false,
+      blending: THREE.AdditiveBlending, opacity: 0
+    });
+    const s = new THREE.Sprite(m); s.scale.setScalar(0.55); scene.add(s); noteSprites.push(s);
+  }
+})();
+const noteW = new THREE.Vector3();
+function updateNotes(T, on) {
+  noteSprites.forEach((s, i) => {
+    if (!on) { s.material.opacity = 0; return; }
+    const hp = otter.head.getWorldPosition(noteW);
+    const t = (T * 0.34 + i / noteSprites.length) % 1;
+    const a = i * 2.4 + T * 0.55, rad = 0.45 + t * 0.7;
+    s.position.set(hp.x + Math.cos(a) * rad, hp.y + 0.55 + t * 1.5, hp.z + Math.sin(a) * rad * 0.6);
+    s.material.opacity = Math.sin(t * Math.PI) * 0.95;
+    s.scale.setScalar(0.5 + 0.28 * Math.sin(t * Math.PI));
+  });
+}
 
 /* ---------------- frases y fotos en órbita ---------------- */
 const phraseSprites = [];
@@ -609,161 +844,200 @@ function buildPenguin() {
   root.add(rig); rig.add(squash); squash.add(model);
   rig.scale.setScalar(0.82);
 
-  /* medidas del cuerpo: silueta tierna y gordita estilo chibi */
-  const BODY_A = 0.98, BODY_H = 1.45, BODY_N = 2.4, BODY_Z = 0.93, GROUND = -1.48;
-  squash.position.y = GROUND; model.position.y = -GROUND;
-
   const C = hex => new THREE.Color(hex).convertSRGBToLinear();
-  const maxAniso = renderer.capabilities.getMaxAnisotropy();
-
-  /* Superelipse aperada: cabeza redondeada en domo y barriga gordita */
-  function profileAt(th) {
-    const c = Math.cos(th), s = Math.sin(th);
-    const isTop = s > 0;
-    const n = isTop ? 2.15 : 2.55;
-    const e = 2 / n;
-    const taper = isTop ? (1 - 0.15 * s) : (1 + 0.08 * Math.abs(s));
-    return [BODY_A * taper * Math.pow(Math.abs(c), e), BODY_H * (s < 0 ? -1 : 1) * Math.pow(Math.abs(s), e)];
-  }
-  function surfaceZ(y) {
-    let prev = null;
-    for (let j = 0; j <= 400; j++) {
-      const p = profileAt(j / 400 * Math.PI / 2);
-      if (prev && prev[1] <= y && p[1] >= y) {
-        const t = (y - prev[1]) / (p[1] - prev[1]);
-        return (prev[0] + (p[0] - prev[0]) * t) * BODY_Z;
-      }
-      prev = p;
-    }
-    return 0.7;
-  }
-
-  /* textura: barriga blanca suave y mejillas redondas con smin orgánico idéntico a la imagen de referencia */
-  function sdEllipse(x, y, cx, cy, rx, ry) {
-    const nx = (x - cx) / rx, ny = (y - cy) / ry;
-    const k = Math.sqrt(nx * nx + ny * ny);
-    return (k - 1.0) * Math.min(rx, ry);
-  }
-  function smin(a, b, k) {
-    const h = Math.max(0.0, Math.min(1.0, 0.5 + 0.5 * (b - a) / k));
-    return (1.0 - h) * b + h * a - k * h * (1.0 - h);
-  }
-  const cov = (d, aa) => d >= aa / 2 ? 0 : (d <= -aa / 2 ? 1 : 0.5 - d / aa);
-  function whiteCoverage(x, y) {
-    const dBelly = sdEllipse(x, y, 0.0, -0.44, 0.76, 0.86);
-    const dChest = sdEllipse(x, y, 0.0, 0.22, 0.60, 0.42);
-    const dLeft = sdEllipse(x, y, -0.30, 0.64, 0.30, 0.38);
-    const dRight = sdEllipse(x, y, 0.30, 0.64, 0.30, 0.38);
-    const dCheeks = Math.min(dLeft, dRight);
-    const dTop = smin(dChest, dCheeks, 0.12);
-    const dTotal = smin(dBelly, dTop, 0.14);
-    return cov(dTotal, 0.016);
-  }
-  function eyeCoverage(x, y) {
-    const cx = x < 0 ? -0.30 : 0.30, cy = 0.65, R = 0.135;
-    const ang = Math.atan2(y - cy, x - cx);
-    const lo = 0.419, hi = 2.723; // arcos felices ⌒ ⌒
-    const ca = ang < lo ? lo : (ang > hi ? hi : ang);
-    const t = (ca - lo) / (hi - lo);
-    const w = 0.026 + 0.018 * Math.sin(t * Math.PI); // trazo tierno y expresivo
-    const dx = x - (cx + R * Math.cos(ca)), dy = y - (cy + R * Math.sin(ca));
-    return cov(Math.sqrt(dx * dx + dy * dy) - w, 0.009);
-  }
-  function makeBodyTexture() {
-    const W = 2048, H = 1024;
-    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-    const ctx = cv.getContext('2d'), img = ctx.createImageData(W, H), d = img.data;
-    const K = [21, 23, 29], Wt = [255, 255, 255], E = [17, 18, 22];
-    const rr = new Float32Array(H), yy = new Float32Array(H);
-    for (let j = 0; j < H; j++) { const v = 1 - (j + 0.5) / H, p = profileAt(-Math.PI / 2 + Math.PI * v); rr[j] = p[0]; yy[j] = p[1]; }
-    const sn = new Float32Array(W), fr = new Uint8Array(W);
-    for (let i = 0; i < W; i++) { const a = ((i + 0.5) / W - 0.5) * 2 * Math.PI; sn[i] = Math.sin(a); fr[i] = Math.cos(a) > 0 ? 1 : 0; }
-    for (let j = 0; j < H; j++) {
-      const y = yy[j], r = rr[j];
-      for (let i = 0; i < W; i++) {
-        const o = (j * W + i) * 4;
-        let wm = 0, em = 0;
-        if (fr[i] && y > -1.45 && y < 1.40) {
-          const x = r * sn[i];
-          wm = whiteCoverage(x, y);
-          if (wm > 0 && y > 0.45 && y < 0.90 && Math.abs(Math.abs(x) - 0.30) < 0.24) em = eyeCoverage(x, y);
-        }
-        let rch = K[0] + (Wt[0] - K[0]) * wm, gch = K[1] + (Wt[1] - K[1]) * wm, bch = K[2] + (Wt[2] - K[2]) * wm;
-        rch = rch * (1 - em) + E[0] * em; gch = gch * (1 - em) + E[1] * em; bch = bch * (1 - em) + E[2] * em;
-        d[o] = rch; d[o + 1] = gch; d[o + 2] = bch; d[o + 3] = 255;
-      }
-    }
-    ctx.putImageData(img, 0, 0);
-    const tex = new THREE.CanvasTexture(cv);
-    tex.encoding = THREE.sRGBEncoding;
-    tex.anisotropy = maxAniso;
-    return tex;
-  }
-
-  /* materiales */
-  const bodyMat = new THREE.MeshPhysicalMaterial({ map: makeBodyTexture(), roughness: 0.45, metalness: 0, clearcoat: 0.36, clearcoatRoughness: 0.28, envMapIntensity: 0.40 });
-  const blackMat = new THREE.MeshPhysicalMaterial({ color: C(0x16181f), roughness: 0.45, metalness: 0, clearcoat: 0.38, clearcoatRoughness: 0.26, envMapIntensity: 0.40 });
-  const orangeMat = new THREE.MeshPhysicalMaterial({ color: C(0xff8f18), roughness: 0.38, metalness: 0, clearcoat: 0.32, clearcoatRoughness: 0.24, envMapIntensity: 0.40 });
-  const mouthMat = new THREE.MeshStandardMaterial({ color: C(0xca2546), roughness: 0.5, side: THREE.BackSide });
-  const tongueMat = new THREE.MeshStandardMaterial({ color: C(0xff758e), roughness: 0.45 });
-
-  /* cuerpo */
-  const NSEG = 96, pts = [];
-  for (let j = 0; j < NSEG; j++) {
-    const p = profileAt(-Math.PI / 2 + Math.PI * j / (NSEG - 1));
-    pts.push(new THREE.Vector2(Math.max(p[0], 1e-4), p[1]));
-  }
-  const body = new THREE.Mesh(new THREE.LatheGeometry(pts, 160), bodyMat);
-  body.scale.set(1, 1, BODY_Z);
-  body.rotation.y = Math.PI;
-  model.add(body);
-
-  /* aletas */
-  const sphere = new THREE.SphereGeometry(1, 40, 28);
-  const wings = [];
-  function makeWing(side) {
-    const pivot = new THREE.Group();
-    pivot.position.set(0.88 * side, 0.20, 0.02);
-    const m = new THREE.Mesh(sphere, blackMat);
-    m.scale.set(0.20, 0.52, 0.14); m.position.y = -0.36; pivot.add(m);
-    pivot.userData = { base: 0.65 * side, side: side };
-    pivot.rotation.z = pivot.userData.base;
-    model.add(pivot); wings.push(pivot);
-  }
-  makeWing(-1); makeWing(1);
-
-  /* patas */
+  const CAM_D = 16, CAM_Y = -0.1;   /* cámara del estudio de referencia, para las medidas */
   const feet = [];
-  function makeFoot(side) {
-    const g = new THREE.Group();
-    g.position.set(0.44 * side, -1.42, 0.34); g.rotation.y = 0.18 * side;
-    const sole = new THREE.Mesh(sphere, orangeMat); sole.scale.set(0.32, 0.09, 0.38); g.add(sole);
-    [-1, 0, 1].forEach(k => {
-      const t = new THREE.Mesh(sphere, orangeMat);
-      t.scale.set(0.125, 0.085, 0.15); t.position.set(k * 0.17, -0.005, 0.36 - Math.abs(k) * 0.04); g.add(t);
-    });
-    model.add(g); feet.push(g);
-  }
-  makeFoot(-1); makeFoot(1);
 
-  /* pico: cúpula superior suave y mandíbula inferior sonriente y abierta */
-  const domeGeo = new THREE.SphereGeometry(1, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2);
-  const bowlGeo = new THREE.SphereGeometry(1, 40, 20, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
-  const beak = new THREE.Group();
-  beak.position.set(0, 0.44, surfaceZ(0.44) - 0.04);
-  beak.rotation.x = 0.08;
-  model.add(beak);
-  const upper = new THREE.Mesh(domeGeo, orangeMat); upper.scale.set(0.31, 0.14, 0.30); upper.position.z = 0.16; beak.add(upper);
-  const upperIn = new THREE.Mesh(domeGeo, mouthMat); upperIn.scale.set(0.29, 0.12, 0.28); upperIn.position.z = 0.16; beak.add(upperIn);
-  const jaw = new THREE.Group(); beak.add(jaw);
-  const lower = new THREE.Mesh(bowlGeo, orangeMat); lower.scale.set(0.27, 0.11, 0.24); lower.position.z = 0.14; jaw.add(lower);
-  const lowerIn = new THREE.Mesh(bowlGeo, mouthMat); lowerIn.scale.set(0.25, 0.095, 0.22); lowerIn.position.z = 0.14; jaw.add(lowerIn);
-  const tongue = new THREE.Mesh(sphere, tongueMat); tongue.scale.set(0.13, 0.035, 0.12); tongue.position.set(0, -0.02, 0.12); jaw.add(tongue);
-  const JAW_REST = 0.28, JAW_MAX = 0.68;
-  jaw.rotation.x = JAW_REST;
+/* ---------- Medidas tomadas de la imagen de referencia ---------- */
+const REF={"prof":[[0.0,-1.4834],[0.2424,-1.4738],[0.3828,-1.4674],[0.5104,-1.4546],[0.587,-1.4419],[0.6374,-1.4291],[0.6567,-1.4164],[0.6778,-1.4036],[0.6969,-1.3908],[0.7146,-1.3781],[0.7316,-1.3653],[0.7464,-1.3526],[0.7592,-1.3398],[0.772,-1.327],[0.7843,-1.3143],[0.7954,-1.3015],[0.8047,-1.2888],[0.815,-1.276],[0.8239,-1.2632],[0.8324,-1.2505],[0.8479,-1.225],[0.8682,-1.1867],[0.8859,-1.1484],[0.9007,-1.1101],[0.9132,-1.0718],[0.9235,-1.0336],[0.9319,-0.9953],[0.9383,-0.957],[0.9433,-0.9187],[0.9473,-0.8804],[0.9497,-0.8422],[0.9503,-0.8039],[0.9496,-0.7656],[0.947,-0.7273],[0.943,-0.689],[0.9379,-0.6508],[0.9318,-0.6125],[0.9262,-0.5742],[0.9219,-0.5359],[0.9172,-0.4976],[0.9122,-0.4594],[0.907,-0.4211],[0.9015,-0.3828],[0.8959,-0.3445],[0.8901,-0.3062],[0.8843,-0.268],[0.8784,-0.2297],[0.8726,-0.1914],[0.8669,-0.1531],[0.8613,-0.1148],[0.8559,-0.0766],[0.8508,-0.0383],[0.8459,0.0],[0.8413,0.0383],[0.8372,0.0766],[0.8335,0.1148],[0.8302,0.1531],[0.8278,0.1914],[0.8265,0.2297],[0.8263,0.268],[0.8268,0.3062],[0.8279,0.3445],[0.829,0.3828],[0.8296,0.4211],[0.8305,0.4594],[0.8317,0.4976],[0.8324,0.5359],[0.8326,0.5742],[0.8324,0.6125],[0.8314,0.6508],[0.8291,0.689],[0.8257,0.7273],[0.8212,0.7656],[0.8154,0.8039],[0.8082,0.8422],[0.7996,0.8804],[0.7892,0.9187],[0.7767,0.957],[0.7623,0.9953],[0.7457,1.0336],[0.7266,1.0718],[0.7048,1.1101],[0.6798,1.1484],[0.6512,1.1867],[0.6188,1.225],[0.5825,1.2632],[0.5308,1.3079],[0.5142,1.3207],[0.496,1.3334],[0.4769,1.3462],[0.4572,1.3589],[0.4348,1.3717],[0.4109,1.3845],[0.3838,1.3972],[0.3548,1.41],[0.322,1.4227],[0.2852,1.4355],[0.2391,1.4483],[0.1783,1.461],[0.1125,1.4738],[0.0,1.4834]],"sdf":{"x0":100,"y0":115,"stride":2,"w":141,"h":211,"k":0.09449,"b64":"///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+/v/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9+PTw7uvp6err7fDz+P3//////////////////////////////////////////////////////ffz8O3r6+vr6+3v8vX7///////////////////////////////////////////////////////////////////////////////////////////99e7o5N/b2dbU09XW2dve4+nv9/7//////////////////////////////////////////////PXu6OPe29nW1tbW1tja3eHm7PP5////////////////////////////////////////////////////////////////////////////////////+vHp4dvUz8rGw8G/vsDBw8bKz9Xb4+vz/v////////////////////////////////////////rx6eHa1M/JxsPBwcHBwcPFyMzS2N/l7fb///////////////////////////////////////////////////////////////////////////////vx6N7VzsfAu7WxrqyrqaysrrG1u8DIz9fh6/b////////////////////////////////////88uje1c3Gv7q0sa6srKysrK6xtLi9xMrS2uPs9v//////////////////////////////////////////////////////////////////////////9One1cvCu7KspqGdmZeWlJaXmZyhpqy0vMTP2eTx/f////////////////////////////////fr39XLwrmyq6agnJmXlpaWlpmcnqSpsLa+xtDZ4+76//////////////////////////////////////////////////////////////////////ru4tbMwrivp56YkY2JhISAfICChIeMkpigqLK8x9Pg7fr/////////////////////////////8uXZzsO4r6ael5GMiISCgICAgISHiY+VnKOrs73G0dzo9P//////////////////////////////////////////////////////////////////9unc0MW5r6WckouEfHdxb2xqaWpsbnF3fIaNlZ+qtsLP3Ov6///////////////////////////w4dTIvLCmnJKKhHx3cW9sampqa21wdHmAiI+Xoaq1v8rX4/D9///////////////////////////////////////////////////////////////05tnLv7OnnZKJfndvaGNdWldUVFRXWV1jaXB4hI2YpLG/zdzr+v////////////////////////Dh0sS2qp6UiX52bmdiXFpXVFRUVllcYGVscnqEjpeirrrG0t/t+/////////////////////////////////////////////////////////////Lk1si7rqKWin51a2NbVE5JRUI/Pz9CREhOVVxkb3mIlKKvvs3c7P3/////////////////////8OHSw7SmmY2CdmtiWlROSERCPz8/QURHTFFZX2dweYaRnKi1ws/e7fv/////////////////////////////////////////////////////////8uPUxrirnpGEd2xiWE9IQDk1MC0qKiotLzQ6QUlSXWl1hJGgr77P4PH////////////////////y4dLDtKWWiXpvY1lPR0A5NDAtKioqLC8yNz1ES1RdZ3F8i5ekssDP3u37///////////////////////////////////////////////////////y49TFtqmajX5xZlpQRTw0LCUgGxgWFRUXGiAmLTZAS1dkcYKRoLHC0+T2//////////////////fl1MS0pZaId2pdUUc8MyslHxsYFRUVFxodIyowOEFKVWFseIeUorHAz97t/f////////////////////////////////////////////////////Tk1MW2p5iLem5hVEk9MykgGBIMBgMBAAACBgwSGiMuOkZUYnGElKS2x9nr/P///////////////OvZyLamloh3aFlMQDQqIBcRCwYDAAAAAgUJDhYcJC44Q09baHWEk6KxwM/f7///////////////////////////////////////////////////9+bWxranmIl4a15RQzcrIRYNBQAAAAAAAAAAAAAABhEdKTdEU2R1iJiqvM7f8v//////////////8d/OvKqZiXdoWUo7LiIXDQQAAAAAAAAAAAAAAAEJERsmMT5KV2RzhJOiscHR4fL////////////////////////////////////////////////76tnJuKmYiXhqXE1AMyYaDgQAAAAAAAAAAAAAAAAAAAALGSY2RldpeY2esMPW6fz////////////55tTCsJ6NempZSjssHhEFAAAAAAAAAAAAAAAAAAAAAAkUIC05R1Vkc4STpLPE1eb3///////////////////////////////////////////////u3sy8q5qLeGpbTD4wIhUIAAAAAAAAAAAAAAAAAAAAAAAACBgpOktdb4KUp7nM3/L////////////w3cq3pJSCb11MOywdDgAAAAAAAAAAAAAAAAAAAAAAAAADDxwpN0ZVZHWGlqa3yNrr/P////////////////////////////////////////////Xj0cCvno18a1xMPS4gEgQAAAAAAAAAAAAAAAAAAAAAAAAAAAsdLkBRY3aKnbDD1+r9//////////nm08Gum4h1Y1FALh4OAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwZKDdGV2Z3iZqrvc7f8f//////////////////////////////////////////++nXxbSikX5vXk0+Lh8QAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAARIjRHWW6ClKi7zuL2//////////HdyrekkXxqV0Y0IhEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKGSg5SVlqeo6fsMLU5vj/////////////////////////////////////////8N7MuqmXhnNiUUAwIBABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFFys+UWR3i5+zx9ru/////////OnVwq6biHNhTjspFwUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACxsrO01eb4KUpbfJ3O/////////////////////////////////////////45dPBr52LeGdVRDMjEgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADyI1SFtvhJeswNTo/f//////9eHNuaeSfmpXRDEeCwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0eL0BSY3WImqy/0uX3///////////////////////////////////////u3Mm2pJF+bFxJOCcVBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABhgsQFRofJGmus/j9///////7trGsp6KdmNPOygVAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAESIzVGWGp8kKO2yNvu//////////////////////////////////////fk0b+smYdzYlA+LBoJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABElOU5id4ygtMnd8v/////86NO/q5eEblpHNCAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGFyk7TmByh5msv9Ll+f///////////////////////////////////+7byLWikHxpV0QyIQ8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsfNEhccYebr8TY7P/////24c25pZF6Z1RAKxcEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4xQ1ZpfJCjtsrd8P//////////////////////////////////+eXSv6yZh3FfTTsoFQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUaLkNXbICVqr/T6P3////x3Mizn4p1YU04JBEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAhQnOk1fcoebrsHV6Pv/////////////////////////////////8d7KtqOQfGlWQzAdCwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVKT1SZ3qRprvP5Pn////t2MOvmodvW0YyHgoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAodMENXanySpbjM4PT////////////////////////////////+6tbCr5uIcl9NOicUAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPJDlOY3eOorfL4PX///3o1L+qloBrVkItGQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEUKDtPYnWJnbHF2e3////////////////////////////////24s+7p5N+a1dEMB0KAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMITVKX3OJnrTI3fL///rl0LumkXxnUj4pFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMHzJFWW6Clqq+0ub6///////////////////////////////v3Mizn4x3Y088KBUBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIHTJHXHCHnLHG2/D///bhzLijj3djTzolEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADFys+UmZ5kKO3y+D0//////////////////////////////3p1cCsmYZvXEg1IQ0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFGi9EWm+Gma7E2e7///PeybSfinRfSzYhDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADyM4TF9ziZ2yxtru//////////////////////////////fjz7umknxpVUEtGQUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADGC1CV2yEl6zB1uv///Hcx7KdiXFcRzIdCQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACR0xRVpuhJeswNTp/v////////////////////////////LdybSgjHdjTjomEgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABFio/VGqAlqq/1On+/+/axrGch29aRTEcBwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAhcrQFRofJKmu8/k+P///////////////////////////+3ZxbGch3FcSDQgDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCk+Umd8lKm+0+n+/+7Zw66ZhG5ZRC8aBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABElOk5jd42htcrf8////////////////////////////ejTv6qWgm1ZRC8aBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEic9Umd8lKm+0+j9/+vWwayXhGxXQi0XAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwgNUldcYicscbb7///////////////////////////+eTPu6aRemdSPioWAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEic8Umd6kaa80eb7/+vWwayWgGpUPyoWAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYbL0RZboSYrcHW6///////////////////////////9eDLt6KOd2NOOSQPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAECU6T2R5kaa80eb7/+vWwayWgGpUPyoVAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIXLEBVaX6Uqb7T5/z/////////////////////////8dzHsp6Jc19KNSEMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAECU6T2R5kaa80eb7/+vWwayWgGpUPyoVAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATJzxRZnmRprvQ5fr/////////////////////////7tnFsJyHb1pGMRwIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEic7UGR5kaa80eb7/+vWwayWgGpUPyoVAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPJDpPY3ePpLnN4vf/////////////////////////7NfCrZmEbFhDLhkEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEic9Umd8lKi90uf8/+vWwayWgGpUPyoVAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANIjdMYXWMobbK3/T////////////////////////+6dS/qpWAalVBLBcCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEic9Umd8lKm+0+n+/+vWwayWgGtWQSwXAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKHzRJXnKJnrTJ3vP////////////////////////859K9qJR8Z1I9KBMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFSo/VGl8lKm+0+n+/+3Yw66ZhGxXQi0YAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIHTJHXHGHnLHG2/D////////////////////////75tG8ppF5ZFA7JxIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABFitAVGqAlqzA1er//+7Zw66ZhG9aRC8aBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGGi9EWm+HnLHG2/D////////////////////////65tG8ppF5ZE86JRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEGS5DV2yEl6zB1uv///DbxrGch3BcRzIdBwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFGi9EWm+Hm6/E2e7////////////////////////44865pI95ZE86JRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHHDFFWm+Hm6/E2e7w8PDdyLSeiXJeSTUgCwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEGS5DV2yEma7D2e7////////////////////////44865pI93Ykw3Ig0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALHzRIXXGJnbLH29vb29vby7ahjXdiTjkkDwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACFy1CV2yEma7D2e7////////////////////////44865pI93Ykw3Ig0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQJDhNYneMobXGxsbGxsbGxrqmkXpnUj0oFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACFy1CV2yEma7D2e7////////////////////////44865pI93Ykw3Ig0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIXKz9SZ3qRpbGxsbGxsbGxsbGqlYBrV0MuGgYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACFy1CV2yEma7D2e7////////////////////////44865pI93Ykw3Ig0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgdMUVZboSWnJycnJycnJycnJycmodxXUk1IAsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACFy1CV2yEl6zB1uv////////////////////////44865pI93Ykw3Ig0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAofNUpfdIeHh4eHh4eHh4eHh4eHh4d3Ykw3Ig0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABFitAVGqAlqzB1uv////////////////////////44865pI93Ykw3Ig0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAkeM0dba29vb29vb29vb29vb29vb29sXUo1IQwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFSo/VGqAlqzB1uv////////////////////////44865pI93Ykw3Ig0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQYKz5NWFpaWlpaWlpaWlpaWlpaWlpZT0AuGwcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFSo/VGqAlqvA1er////////////////////////24cy3oo53Ykw3Ig0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPIC88Q0REREREREREREREREREREREPTEiEQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCo/U2h8lKm+0+f8///////////////////////z3sm0oIx0X0o2IQwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACEh8pLi8vLy8vLy8vLy8vLy8vLy8vKiATBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEic8UWZ5kaa6z+P3///////////////////////u2sWxnIdxXEgzHgkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQ0VGRoaGhoaGhoaGhoaGhoaGhoaFg4DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADyQ5TmJ3jKC0yd7y//////////////////////7p1MCsl4RtWUQvGgYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBAUFBQUFBQUFBQUFBQUFBQUFAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACx80SFxxh5yvw9fr//////////////////////jkz7unknxoUz8qFgEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABhovQ1hrgJSpvdHl+f////////////////////PeyrWhjXdjTzolEQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJGiw9T2J1iZyvwtXp/P/////////////////////t2ca1oo98aVdGNSQUAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUVJjhJW2x+kqS3y97x///////////////////////249G+rJmIdWNTQjEhEQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxMjM0RVZniKnK/C1Ob6////////////////////////7dvJt6SUgnBgTz8uHxEDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEiExQFFicoaWp7nL3vH/////////////////////////+ObUwrCgj3xtXEw9LiESAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUTITA/T15vfpGis8XW6fv///////////////////////////Hfzr2tnIt6altMPzAhFAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABhQiMD9NXG18jZ6vwNHi9P////////////////////////////zr28q6qZmJeGpcTT8xJBcKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKFyQxQE5ca3qLnKu8zN3u///////////////////////////////46NjHtqeYiXprXE9CNSgbDgEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0bKDVCT15reouaqbrJ2er7////////////////////////////////9eXUxbanmYt6bWBTRjgrHhIEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADER4rOEZSYG18i5qpuMfY5/f///////////////////////////////////Lj1MW2qZqLfHBjVkk8LyITBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAISIS47SVZjb3yNm6m4x9bl9f/////////////////////////////////////y49THuKmcj4JzZ1lNQDEiEgEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8gMD9MWWZzgo+cq7jH1uX0////////////////////////////////////////8uXWx7qtoJOGd2peT0AwHw0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABxosPk1caneGk5+tusnW5fT///////////////////////////////////////////Tl2Mq9sKOWiXptXk08KRUBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAECM2SVtreomWo7C9ytjn9P/////////////////////////////////////////////16NvOwLSnmo18a1hEMBwHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADFys/UmV4i5mms8DO2uj2////////////////////////////////////////////////+Ove0cS3q5qIcl5KNiEMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHHDFGWm6Elqi2xNHe6/j///////////////////////////////////////////////////zv4tXItqKOd2JMNyINAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIHTJHXHGJnrLF1OHv/P//////////////////////////////////////////////////////8t7KtaGMdmFMNyINAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIHTJHXHGHnK/D2Oz/////////////////////////////////////////////////////////7NjEsJyHcV1INB8KAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFGi5DWGuAlaq+0eX5///////////////////////////////////////////////////////55NG9qZWAbFhDLxoGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABFSk9UWZ5j6K2yt7x///////////////////////////////////////////////////////x3sq2oo95ZVE9KRUBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADyM3S15yiJyvwtbq/f////////////////////////////////////////////////////3q1cKvm4dxXko2Ig4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACBwwRFhrfpOnu87i9v////////////////////////////////////////////////////Xhzrunkn5rV0MvHAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARUpPE9jd4ufs8ba7f///////////////////////////////////////////////////+3ZxbKei3djTzwoFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0hNUhbb4SXq77R5Pj/////////////////////////////////////////////////+OTRvqqWhG5bSDUhDQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUYLEBUZ3qPorbJ3O//////////////////////////////////////////////////79zJtaKPeWZUQCwYBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARJDhLXnGHmazA0+b6///////////////////////////////////////////////76NTArJmHcV5LNyQRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJHC9DVml8kaS3y97x///////////////////////////////////////////////y38u4pZF8aVZCLxwIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCc6TmFziZyvwtbp/f////////////////////////////////////////////3q1sOwnYl1YU06JxMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACx4xRVhrfpOnus7h8/////////////////////////////////////////////XhzrunlIBsWUUyHgoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAhYpPE9jd4uessTY6/7//////////////////////////////////////////+zYxbKei3djUD0qFgMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0hNUhbboSVqbzP4/f/////////////////////////////////////////9uPQvamWhG5bSDUhDgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUYLD9SZXiNoLTI2+3/////////////////////////////////////////7tvHs6GOeWVSPywYBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQIzZJXHCGmKu+0eT5///////////////////////////////////////55dK/q5iEcF1KNiMQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHGi1BVWh6j6K2yt3w///////////////////////////////////////w3cq2o5B6aFRBLhsHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEiU4S15xh5uuwdTo+/////////////////////////////////////vo1MGum4dyX0w4JRIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACRwvQ1dqfJKluMvf8v////////////////////////////////////Lfy7ilknxqV0MwHQkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABQoO05idYmdsMPX6v3//////////////////////////////////erWw7CdiXViTjsoFAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsfMkVZbICUqLvO4vX/////////////////////////////////9uLOu6eUgGxZRTIfCwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMWKj1QZHeLn7LG2u3/////////////////////////////////7tvHs5+Ld2NQPSoWAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOITVIW2+El6u+0uX5///////////////////////////////55dK/q5iEb1xJNSEOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGGCxAVGd6j6O2yt7x///////////////////////////////w3cq2o5B6aFRALRoGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAESQ4S19yiJyvwtXp/P////////////////////////////zp1cGum4dyX0w4JRIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACRwwRFhrfpKnuczg8/////////////////////////////ThzbmmknxqV0MwHQkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARUpPE9jdoqdscTY7P///////////////////////////+zYxbGeinZiTjsoFAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0gNEdZboKVqb3R5Pn/////////////////////////+OTQvamWhG5aRzMfCwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQXKz5RZXmPorbK3fD/////////////////////////8N3JtaGOeWVSPysXBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPIzdLXnGHm67B1en9///////////////////////96dXBrpuHcV1KNiMQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIHC9DV2p8kqe6zuL2///////////////////////24s67p5J8aldDLhsHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCg7T2N2i5+zx9ru///////////////////////u28ezn4t3Y087KBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADCA0R1tvhJeswNTo/P////////////////////vo1MCsmIRvW0g0IAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBgsQFRofJGluc3h9f////////////////////TgzLilkXxoVEAsGAUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABElOU5idYqessba7v///////////////////+7axrGdiXVhTTklEgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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AAAAAAAAAAAAAAAAAAAAAAAACBstP1JmeY2fssXZ7P////////////////////LfzLimkn5sWUg1IhAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABEyU3SlxvhJapvM/i9f////////////////////vo1cKvnYp3Y1E/LRsJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMHjBCVGd5jZ+yxdjr/v/////////////////////x3sy5p5SCblxKOCcUAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcYKjtNX3GEl6q8z+L1///////////////////////76dbDsJ6LeWdWQzIgDwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAhIkNUdZanyPorPG2Ov+////////////////////////8t/Nu6mXhnJhTz4tHAsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADh8wQVNkdomarL7Q4/b//////////////////////////OrYxrWjkX5sW0o5KRgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMHCw9TV5wgpSmt8nb7f////////////////////////////Xj0sCunIt4aFdGNiYVBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgZKTpKW2t8j6Cxw9Xm+P/////////////////////////////v3cu6qJeHdWRURDMjEwUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACBcmN0dXaHiKmqy9zuDy///////////////////////////////66dfGtaSUhHFiUUAxIhMFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIFyY1RFRkdYiXp7jJ2+z9////////////////////////////////9OPSwrGhkX5vXk9AMSITBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgXJjVEU2JxhJSktMXW5vj///////////////////////////////////Dfz76vno18bV5PQDEjFQcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAChcmNURTYnCCkaKywtLj9P////////////////////////////////////3t3My8q5yNfG1eT0AzJRgLAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOGyg1RFNicH6PoK+/z+Dw///////////////////////////////////////66tnJuqucjXxtXlFCNikcDwMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABREeKzlGU2Jwfo+erb3N3O3+////////////////////////////////////////9+fYybqrnI18b2BTRjktIRQJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKFiIvPElWY3GCj56tvMvb6/r///////////////////////////////////////////bn2Mm6q5yNfnFkV0o+MiYbEAUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABxEcJzNATFlnc4KRoK28y9rp+P/////////////////////////////////////////////259jJuquej4R1aFtPQzgtIhcOBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMOGCQuOURRXWp3hpOgr73L2un4////////////////////////////////////////////////9ufYybytoJSHeG1hVUo/NCogFw0FAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGDhcgKjVBS1Zib3qJlqSwvs3b6fj///////////////////////////////////////////////////bn2cu+saSXi35xZ1xRRj00KSEYEAgBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCRAYISoyPUdTXWhygI2Zp7TBztzr+P/////////////////////////////////////////////////////36dvPwrWonJGGeG9jWVBGPDUsIxwVDgcCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCA8WHCQsNT1FT1lkcHqHkZ6qt8TR3uv6////////////////////////////////////////////////////////+ezf0sa6rqKXi4J1bGNYT0g/Ny8oIhwXEQwHAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEGCxAWHCMpMDg/SFBZYmx1go6Yo6+8yNXi7/z///////////////////////////////////////////////////////////3w49fLv7SpnpSJfnVrY1tSS0Q8NjErJiAcFxIPCggFAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBwoPEhUaHyUqMTc9RUtTW2RsdX6JlKCqtcDN2eXy////////////////////////////////////////////////////////////////9Onc0ca7sKWck4l+d29mXldRSkU/OjQxKycjHx0ZFhQSDw0LCgkIBgUFAgICAgICAgUFBQYICAoKDRASFBUZHB8jJyovNDo+RUpRWF5nb3d+iZKcpbG9yNLd6vf///////////////////////////////////////////////////////////////////ru49jOwrivpZyTi4R5cmtlXllTT0lFPzw4NDIuKyknJSIgHx4dGxoaFxcXFxcXFxoaGhodHR8fIiUnKSotMTQ4PD9DSE5TWV9ma3J6hIuUnKWvuMLO2eTv+///////////////////////////////////////////////////////////////////////9erf1cvCuK+nn5aPiIB5cm5oY15ZVFFMSkdDQD48Ojc1NTMyMC8vLS0tLS0tLS8vLy8yMjQ1Nzo9Pj9CRklMUVRYXWJnbHN5gImPl5+nr7jCy9Xg7Pf///////////////////////////////////////////////////////////////////////////zx6N7Vy8K6sqqim5SOiYR8d3JuaWZhX1xYVFJRT0xKSkdHRUREQkJCQkJCQkRERERHR0hKTE9SU1RXWl5hZmlscXZ8gImPlZyiq7K6wsvV3ujx/f//////////////////////////////////////////////////////////////////////////////+/Ho3tbOxb62r6minZeSjImEfHl2c3BsamdmZGJfX1xcWlpZV1dXV1dXV1laWlpcXF1fYGNnZ2psb3J1eXyAh4ySlp2iqq+2vsbO1t7o8fr////////////////////////////////////////////////////////////////////////////////////68eni2dHKw722saynoZ2XlJCMiYeEgHx5eHd0dHFxb29ubGxsbGxsbG5vb29xcXF0dHd8fICCh4mMkJSWnKGmq7C3vcPL0dri6fH6//////////////////////////////////////////////////////////////////////////////////////////317eTe19DLxsC7trGsqaShnpyXlpSRj4yMi4mJh4eEhISEhISEhISHh4eHiYmMjI+RlJaXmp6hpKmssLW6v8TL0dje5e31/f////////////////////////////////////////////////////////////////////////////////////////////////ny6+Tf2tXPy8bBvrm2tLCsqqmmpKGhn56dnJyZmZmZmZmZmZmcnJycnp6hoaSmqausr7K2ub7BxMrO1Njf5ezy+f////////////////////////////////////////////////////////////////////////////////////////////////////////n07unj39rW087LyMXBv768uba2tLSxsbGurq6urq6urq6xsbGxtLS1tri7vr/BxMfKzdPW2N7j6e3z+v////////////////////////////////////////////////////////////////////////////////////////////////////////////////749O7q5+Pg3dnW1NPQzsvLycnGxsbDw8PDw8PDw8PGxsbGycnKy83Q09TW2dzf4ufq7fP3/f///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////Pf18u7r6efl4+Hh3t7c29rZ2dnZ2dnZ2dna29vb3t7f4eLl6Onr7fH09/z/////////////////////////////////////////////////////////////////"},"eyes":[{"x0":156,"yc":[211.25,210.91,210.42,209.77,209.0,208.22,207.51,206.84,206.17,205.56,205.01,204.51,204.06,203.67,203.34,203.01,202.73,202.56,202.44,202.27,202.0,201.73,201.57,201.54,201.62,201.85,202.15,202.38,202.49,202.57,202.74,203.02,203.39,203.79,204.21,204.63,205.05,205.52,206.07,206.73,207.51,208.33,209.1,209.8,210.37,210.74],"t":[4.18,5.43,6.65,7.48,7.94,8.2,8.33,8.32,8.34,8.43,8.48,8.52,8.57,8.66,8.68,8.67,8.77,8.88,8.88,8.77,8.69,8.77,8.91,8.98,9.0,9.0,9.0,9.0,9.02,9.09,9.23,9.31,9.23,9.12,9.12,9.25,9.4,9.46,9.4,9.23,8.97,8.64,8.16,7.42,6.33,5.16]},{"x0":273,"yc":[210.75,210.41,209.92,209.27,208.5,207.72,207.01,206.34,205.69,205.11,204.64,204.21,203.79,203.39,203.02,202.73,202.56,202.45,202.32,202.11,201.89,201.69,201.56,201.54,201.62,201.85,202.15,202.38,202.5,202.62,202.85,203.18,203.5,203.85,204.27,204.76,205.27,205.86,206.56,207.35,208.16,208.99,209.78,210.47,211.09,211.58],"t":[5.18,6.43,7.65,8.48,8.94,9.2,9.33,9.32,9.32,9.33,9.23,9.12,9.12,9.23,9.31,9.23,9.12,9.14,9.32,9.54,9.54,9.32,9.12,9.02,9.0,9.0,9.0,9.0,9.0,9.0,9.0,9.0,9.0,9.0,9.0,9.0,9.0,8.98,8.88,8.65,8.32,7.97,7.51,6.77,5.77,4.84]}]};
+/* S: unidades 3D por píxel de la referencia. AX y YC: columna del eje y fila central en esa imagen. */
+const S=0.00638, AX=239.75, YC=304;
+const BODY_Z=0.85;                                   /* profundidad del cuerpo respecto a su ancho */
+const mag=z=>CAM_D/(CAM_D-z);                        /* aumento de perspectiva a la profundidad z */
+const lift=(Y,z)=>(Y-CAM_Y)/mag(z)+CAM_Y;            /* altura real para que algo a profundidad z se vea a la altura Y de la referencia */
+const P=REF.prof, PN=P.length;
+/* Oscurecimiento medido en la referencia (sombra bajo la barbilla y en la base de la barriga): desde la fila 120, cada 5 filas */
+const AO=[1.027, 1.006, 0.981, 0.959, 0.945, 0.939, 0.935, 0.932, 0.927, 0.921, 0.912, 0.902, 0.891, 0.882, 0.876, 0.879, 0.891, 0.913, 0.941, 0.97, 0.993, 1.005, 1.007, 1.001, 0.986, 0.963, 0.931, 0.89, 0.843, 0.796, 0.752, 0.715, 0.688, 0.673, 0.673, 0.687, 0.716, 0.756, 0.799, 0.838, 0.868, 0.888, 0.901, 0.907, 0.91, 0.91, 0.909, 0.906, 0.903, 0.899, 0.894, 0.888, 0.882, 0.874, 0.866, 0.856, 0.845, 0.834, 0.824, 0.815, 0.807, 0.801, 0.797, 0.794, 0.791, 0.789, 0.786, 0.782, 0.779, 0.776, 0.773, 0.771, 0.769, 0.767, 0.764, 0.762, 0.761, 0.761, 0.765, 0.772, 0.781, 0.791];
+function aoAt(py){
+  const f=(py-120)/5;
+  if(f<=0) return AO[0];
+  if(f>=AO.length-1) return AO[AO.length-1];
+  const i=Math.floor(f), t=f-i;
+  return AO[i]*(1-t)+AO[i+1]*t;
+}
+const WHITE_LIN=Math.pow(250/255,2.2);
+const GROUND=lift(-1.678,0.7);                       /* base de las patas */
+
+function radiusAt(y){
+  for(let i=0;i<PN-1;i++){
+    const a=P[i], b=P[i+1];
+    if(a[1]<=y&&b[1]>=y){ const t=(y-a[1])/((b[1]-a[1])||1); return a[0]+(b[0]-a[0])*t; }
+  }
+  return 0.7;
+}
+const surfaceZ=y=>radiusAt(y)*BODY_Z;
+
+/* Mancha blanca (cara y barriga): distancia con signo medida sobre la referencia */
+const SDF=(function(){
+  const s=REF.sdf, bin=atob(s.b64), a=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i);
+  return {a:a,x0:s.x0,y0:s.y0,st:s.stride,w:s.w,h:s.h,k:s.k};
+})();
+function sdfAt(px,py){
+  const gx=(px-SDF.x0)/SDF.st, gy=(py-SDF.y0)/SDF.st;
+  if(gx<0||gy<0||gx>SDF.w-1||gy>SDF.h-1) return 99;
+  const x0=Math.floor(gx), y0=Math.floor(gy), fx=gx-x0, fy=gy-y0;
+  const x1=Math.min(x0+1,SDF.w-1), y1=Math.min(y0+1,SDF.h-1), A=SDF.a, w=SDF.w;
+  const top=A[y0*w+x0]*(1-fx)+A[y0*w+x1]*fx, bot=A[y1*w+x0]*(1-fx)+A[y1*w+x1]*fx;
+  return (top*(1-fy)+bot*fy-128)*SDF.k;
+}
+/* Ojos felices: trazo medido columna por columna */
+function eyeCov(px,py){
+  let best=0;
+  for(let q=0;q<REF.eyes.length;q++){
+    const e=REF.eyes[q], n=e.yc.length, cf=px-e.x0;
+    if(cf<-3||cf>n+2) continue;
+    const c=clamp(cf,0,n-1), i0=Math.floor(c), i1=Math.min(i0+1,n-1), f=c-i0;
+    const yc=e.yc[i0]*(1-f)+e.yc[i1]*f-0.5, th=e.t[i0]*(1-f)+e.t[i1]*f+1.0;
+    const dy=Math.abs(py-yc)-th/2, dx=cf<0?-cf:(cf>n-1?cf-(n-1):0);
+    const d=Math.hypot(Math.max(dy,0),dx)+Math.min(dy,0);
+    best=Math.max(best,clamp(0.5-d/1.3,0,1));
+  }
+  return best;
+}
+
+/* ---------- Textura del cuerpo: negro con cara y barriga blancas, ojos felices ---------- */
+function makeBodyTexture(){
+  const W=2048,H=1024;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d'), img=ctx.createImageData(W,H), d=img.data;
+  const K=[13,15,19], Wt=[250,251,253], E=[14,15,20];
+  const sn=new Float32Array(W), cs=new Float32Array(W);
+  for(let i=0;i<W;i++){ const a=((i+0.5)/W-0.5)*2*Math.PI; sn[i]=Math.sin(a); cs[i]=Math.cos(a); }
+  for(let j=0;j<H;j++){
+    const f=(1-(j+0.5)/H)*(PN-1), i0=Math.min(PN-2,Math.floor(f)), t=f-i0;
+    const r=P[i0][0]+(P[i0+1][0]-P[i0][0])*t, y=P[i0][1]+(P[i0+1][1]-P[i0][1])*t;
+    for(let i=0;i<W;i++){
+      const o=(j*W+i)*4;
+      let wm=0, em=0, wk=1;
+      if(cs[i]>0){
+        const m=CAM_D/(CAM_D-BODY_Z*r*cs[i]);
+        const px=AX+r*sn[i]*m/S, py=YC-((y-CAM_Y)*m+CAM_Y)/S;
+        wm=clamp(0.5-sdfAt(px,py)/1.4,0,1);
+        if(wm>0){ wk=255*Math.pow(WHITE_LIN*aoAt(py),1/2.2)/250; if(py>185&&py<225) em=eyeCov(px,py); }
+      }
+      let rch=K[0]+(Wt[0]*wk-K[0])*wm, gch=K[1]+(Wt[1]*wk-K[1])*wm, bch=K[2]+(Wt[2]*wk-K[2])*wm;
+      rch=rch*(1-em)+E[0]*em; gch=gch*(1-em)+E[1]*em; bch=bch*(1-em)+E[2]*em;
+      d[o]=rch; d[o+1]=gch; d[o+2]=bch; d[o+3]=255;
+    }
+  }
+  ctx.putImageData(img,0,0);
+  const tex=new THREE.CanvasTexture(cv);
+  tex.encoding=THREE.sRGBEncoding;
+  tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+  return tex;
+}
+
+/* ---------- Materiales ---------- */
+const bodyMat=new THREE.MeshPhysicalMaterial({map:makeBodyTexture(),roughness:0.7,metalness:0,clearcoat:0.12,clearcoatRoughness:0.35,envMapIntensity:0.12});
+const blackMat=new THREE.MeshPhysicalMaterial({color:C(0x0d0f13),roughness:0.7,metalness:0,clearcoat:0.12,clearcoatRoughness:0.35,envMapIntensity:0.12});
+const orangeMat=new THREE.MeshPhysicalMaterial({color:C(0xf27c03),roughness:0.5,metalness:0,clearcoat:0.2,clearcoatRoughness:0.3,envMapIntensity:0.2,emissive:C(0xf27c03),emissiveIntensity:0.16});
+const mouthMat=new THREE.MeshStandardMaterial({color:C(0x4a1a0e),roughness:0.6,side:THREE.BackSide});
+const tongueMat=new THREE.MeshStandardMaterial({color:C(0x9a4a30),roughness:0.5});
+
+/* ---------- Armado del modelo ---------- */
+
+
+const sphere=new THREE.SphereGeometry(1,40,28);
+/* Formas suaves cerradas (esfera deformada con vértices compartidos), con color por vértice */
+function makeBlob(nu,nv,deform,colorFn){
+  const pos=[], col=[], idx=[];
+  const add=(x,y,z)=>{ const d=deform(x,y,z), c=colorFn(x,y,z); pos.push(d[0],d[1],d[2]); col.push(c[0],c[1],c[2]); return pos.length/3-1; };
+  const top=add(0,1,0), rings=[];
+  for(let j=1;j<nv;j++){
+    const th=Math.PI*j/nv, y=Math.cos(th), r=Math.sin(th);
+    rings.push(pos.length/3);
+    for(let i=0;i<nu;i++){ const ph=2*Math.PI*i/nu; add(r*Math.sin(ph),y,r*Math.cos(ph)); }
+  }
+  const bot=add(0,-1,0);
+  for(let i=0;i<nu;i++){ const n=(i+1)%nu; idx.push(top,rings[0]+i,rings[0]+n); }
+  for(let j=0;j<rings.length-1;j++) for(let i=0;i<nu;i++){
+    const n=(i+1)%nu, a=rings[j]+i, b=rings[j]+n, c=rings[j+1]+i, d=rings[j+1]+n;
+    idx.push(a,c,b, b,c,d);
+  }
+  const L=rings[rings.length-1];
+  for(let i=0;i<nu;i++){ const n=(i+1)%nu; idx.push(bot,L+n,L+i); }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+
+/* cuerpo: el perfil sale directo de la silueta de la referencia */
+const body=new THREE.Mesh(new THREE.LatheGeometry(P.map(p=>new THREE.Vector2(Math.max(p[0],1e-4),p[1])),160),bodyMat);
+body.scale.set(1,1,BODY_Z);
+body.rotation.y=Math.PI;       /* la costura queda en la espalda */
+model.add(body);
+
+/* aletas: largas, inclinadas hacia afuera, con el hombro pegado al cuerpo */
+const wings=[];
+function makeWing(side){
+  const pivot=new THREE.Group();
+  pivot.position.set(0.80*side,0.06,0);
+  const m=new THREE.Mesh(sphere,blackMat);
+  m.scale.set(0.235,0.485,0.17); m.position.y=-0.50; pivot.add(m);
+  pivot.userData={base:0.62*side,side:side};
+  pivot.rotation.z=pivot.userData.base;
+  model.add(pivot); wings.push(pivot);
+}
+makeWing(-1); makeWing(1);
+
+/* patas: anchas, con tres dedos, apoyadas delante de la base del cuerpo */
+function makeFoot(side){
+  const g=new THREE.Group();
+  g.position.set((side<0?-0.563:0.528)/mag(0.55),GROUND+0.108,0.52);
+  g.rotation.y=0.16*side;
+  const sole=new THREE.Mesh(sphere,orangeMat); sole.scale.set(0.235,0.108,0.28); g.add(sole);
+  [[-0.14,0.19],[0,0.22],[0.14,0.19]].forEach(k=>{
+    const t=new THREE.Mesh(sphere,orangeMat);
+    t.scale.set(0.095,0.092,0.11); t.position.set(k[0],-0.012,k[1]); g.add(t);
+  });
+  model.add(g); feet.push(g);
+}
+makeFoot(-1); makeFoot(1);
+
+/* pico de pato: labio superior fijo + mandíbula que gira. El interior de la boca va pintado en los vértices. */
+const ORANGE_L=C(0xf27c03), MOUTH_L=C(0x4a1a0e);
+const sstep=(a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+const mixc=k=>[ORANGE_L.r+(MOUTH_L.r-ORANGE_L.r)*k, ORANGE_L.g+(MOUTH_L.g-ORANGE_L.g)*k, ORANGE_L.b+(MOUTH_L.b-ORANGE_L.b)*k];
+const BW=0.236, BU=0.16, BL=0.125;     /* medio ancho, alto del labio superior, hondo de la mandíbula */
+const boxy=(v,e)=>Math.sign(v)*Math.pow(Math.abs(v),e);      /* esquinas más llenas que una elipse */
+const upperGeo=makeBlob(56,32,
+  (x,y,z)=>[BW*boxy(x,0.82)*(1+0.07*Math.max(0,-y)), (y>=0?BU*boxy(y,0.8):BU*0.22*y)-0.045*x*x*(1-Math.max(y,0)), 0.27*z+0.10],
+  (x,y)=>mixc(sstep(-0.15,-0.4,y)));
+const lowerGeo=makeBlob(56,32,
+  (x,y,z)=>[BW*0.97*boxy(x,0.85), (y>=0?0.04*y:BL*y)+0.045*x*x*(1+Math.min(y,0)), 0.23*z+0.17],
+  (x,y)=>mixc(sstep(0.1,0.35,y)));
+const beakMat=new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:0.45,metalness:0,clearcoat:0.25,clearcoatRoughness:0.3,envMapIntensity:0.2,emissive:C(0xf27c03),emissiveIntensity:0.1});
+const BZ=0.85, BHY=lift(0.423,BZ);
+const beak=new THREE.Group();
+beak.position.set(-0.015,BHY,surfaceZ(BHY)-0.10);
+model.add(beak);
+beak.add(new THREE.Mesh(upperGeo,beakMat));
+const throat=new THREE.Mesh(sphere,new THREE.MeshStandardMaterial({color:MOUTH_L,roughness:0.8}));
+throat.scale.set(0.21,0.12,0.05); throat.position.set(0,-0.06,0.07); beak.add(throat);
+const jaw=new THREE.Group(); beak.add(jaw);
+jaw.add(new THREE.Mesh(lowerGeo,beakMat));
+const tongue=new THREE.Mesh(sphere,new THREE.MeshStandardMaterial({color:C(0xa4513a),roughness:0.55}));
+tongue.scale.set(0.088,0.026,0.085); tongue.position.set(0,0.03,0.2); jaw.add(tongue);
+const JAW_REST=0.36, JAW_MAX=0.7;
+jaw.rotation.x=JAW_REST;
+
+
 
   /* ancla del globo: arriba de la cabeza */
-  const head = new THREE.Group(); head.position.set(0, 0.78, 0.10); model.add(head);
+  const head = new THREE.Group(); head.position.set(0, 0.80, 0.10); model.add(head);
 
   /* sobre de la carta, flotando delante del pecho */
   const matCache = {};
@@ -775,21 +1049,21 @@ function buildPenguin() {
     }));
   };
   const envelope = new THREE.Group();
-  envelope.position.set(0, -0.28, 1.28);
+  envelope.position.set(0, -0.30, 1.34);
   envelope.rotation.x = -0.06;
   envelope.visible = false;
   model.add(envelope);
   const envelopeLight = new THREE.PointLight(0xff9ec8, 0, 4.5, 2);
-  envelopeLight.position.set(0, 0, 0.7);
+  envelopeLight.position.set(0, 0, 0.72);
   envelope.add(envelopeLight);
-  envelope.add(new THREE.Mesh(new THREE.BoxGeometry(1.04, 0.74, 0.045), mat(0xb8275a, 0.55, 0.18)));
-  const face = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.62, 0.05), mat(0xffe9f0, 0.68, 0.22));
+  envelope.add(new THREE.Mesh(new THREE.BoxGeometry(1.08, 0.76, 0.045), mat(0xb8275a, 0.55, 0.18)));
+  const face = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.64, 0.05), mat(0xffe9f0, 0.68, 0.22));
   face.position.z = 0.025; envelope.add(face);
-  const tri = new THREE.Shape(); tri.moveTo(-0.48, 0.33); tri.lineTo(0.48, 0.33); tri.lineTo(0, -0.12); tri.closePath();
+  const tri = new THREE.Shape(); tri.moveTo(-0.50, 0.34); tri.lineTo(0.50, 0.34); tri.lineTo(0, -0.12); tri.closePath();
   const flap = new THREE.Mesh(new THREE.ExtrudeGeometry(tri, { depth: 0.03, bevelEnabled: false }), mat(0xff9fbe, 0.55, 0.2));
   flap.position.z = 0.055; envelope.add(flap);
   const edges = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.BoxGeometry(1.04, 0.74, 0.045)),
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(1.08, 0.76, 0.045)),
     new THREE.LineBasicMaterial({ color: 0x7a163c, transparent: true, opacity: 0.82 })
   );
   envelope.add(edges);
@@ -798,13 +1072,13 @@ function buildPenguin() {
   lx.font = 'italic 600 44px Georgia, serif'; lx.textAlign = 'center'; lx.textBaseline = 'middle';
   lx.fillStyle = '#7a1f42'; lx.fillText('Para ti', 128, 38);
   const lt = new THREE.CanvasTexture(lc); lt.encoding = THREE.sRGBEncoding;
-  const label = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.17), new THREE.MeshBasicMaterial({ map: lt, transparent: true, depthWrite: false }));
-  label.position.set(0, -0.245, 0.092); envelope.add(label);
-  const sealBack = new THREE.Mesh(new THREE.CircleGeometry(0.11, 28), mat(0x8e123a, 0.5, 0.3));
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.175), new THREE.MeshBasicMaterial({ map: lt, transparent: true, depthWrite: false }));
+  label.position.set(0, -0.252, 0.092); envelope.add(label);
+  const sealBack = new THREE.Mesh(new THREE.CircleGeometry(0.115, 28), mat(0x8e123a, 0.5, 0.3));
   sealBack.position.set(0, -0.06, 0.075); envelope.add(sealBack);
   const hs = new THREE.Shape(); hs.moveTo(5, 5); hs.bezierCurveTo(5, 5, 4, 0, 0, 0); hs.bezierCurveTo(-6, 0, -6, 7, -6, 7); hs.bezierCurveTo(-6, 11, -3, 15.4, 5, 19); hs.bezierCurveTo(12, 15.4, 16, 11, 16, 7); hs.bezierCurveTo(16, 7, 16, 0, 10, 0); hs.bezierCurveTo(7, 0, 5, 5, 5, 5);
   const hg = new THREE.ShapeGeometry(hs); hg.translate(-5, -9.5, 0);
-  const seal = new THREE.Mesh(hg, mat(0xe0185e, 0.35, 0.6)); seal.scale.setScalar(0.0105); seal.position.set(0, -0.06, 0.09); envelope.add(seal);
+  const seal = new THREE.Mesh(hg, mat(0xe0185e, 0.35, 0.6)); seal.scale.setScalar(0.0108); seal.position.set(0, -0.06, 0.09); envelope.add(seal);
 
   const st = { mouth: 0, energy: 0, env: 0 };
   function update(dt, t, sp, w, pose, envOn, singing, songLevel) {
@@ -873,9 +1147,9 @@ function buildPenguin() {
     /* sobre de la carta */
     st.env = lerp(st.env, envOn ? 1 : 0, damp(5, dt));
     envelope.visible = st.env > 0.02;
-    envelope.scale.setScalar(Math.max(0.001, st.env * 1.18));
-    envelope.position.y = -0.28 + st.env * 0.04 + Math.sin(t * 1.8) * 0.018;
-    envelope.position.z = 1.28 + st.env * 0.14 + Math.sin(t * 1.1) * 0.012;
+    envelope.scale.setScalar(Math.max(0.001, st.env * 1.2));
+    envelope.position.y = -0.30 + st.env * 0.04 + Math.sin(t * 1.8) * 0.018;
+    envelope.position.z = 1.34 + st.env * 0.14 + Math.sin(t * 1.1) * 0.012;
     envelope.rotation.y = Math.sin(t * 0.9) * 0.04;
     envelope.rotation.z = Math.sin(t * 1.15) * 0.025;
     envelopeLight.intensity = st.env * 0.95;
@@ -887,8 +1161,8 @@ function buildPenguin() {
     envelope.visible = false; envelope.scale.setScalar(0.001); envelopeLight.intensity = 0;
     squash.scale.set(1, 1, 1); squash.position.y = GROUND;
     model.rotation.set(0, 0, 0);
-    wings.forEach(w => w.rotation.set(0, 0, w.userData.base));
-    feet.forEach(f => f.rotation.x = 0);
+    wings.forEach(wing => wing.rotation.set(0, 0, wing.userData.base));
+    feet.forEach(foot => foot.rotation.x = 0);
   }
 
   return { root, rig, head, update, reset, pitch: wUp => lerp(0.18, 0.02, wUp), envelope, state: st };
@@ -997,8 +1271,8 @@ function startTour() {
   WAY.forEach((w, k) => { pts.push(new THREE.Vector3(w.p[0], w.p[1], w.p[2])); if (w.stop !== undefined) stopAt[k + 1] = w.stop; });
   const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal', 0.5), durs = [];
   for (let i = 0; i < pts.length - 1; i++) durs.push(Math.max(1.5, pts[i].distanceTo(pts[i + 1]) / 19));
-  tour = { pts, stopAt, curve, durs, n: pts.length, seg: 0, f: 0, state: 'fly', w: 0, stop: -1, msg: 0, stopCam: new THREE.Vector3(), pose: '', envOn: false, camBlend: 1, songDone: false, singing: false };
-  S.phase = 'tour'; hideBubble(); setUI();
+  tour = { pts, stopAt, curve, durs, n: pts.length, seg: 0, f: 0, state: 'fly', w: 0, stop: -1, msg: 0, stopCam: new THREE.Vector3(), pose: '', envOn: false, camBlend: 1, songDone: false, singing: false, songIdx: -1, songAt: 0 };
+  S.phase = 'tour'; hideBubble(); setUI(); primeSong();
 }
 function posAt(seg, f, out) { return tour.curve.getPoint(clamp((seg + f) / (tour.n - 1), 0, 1), out); }
 
@@ -1052,8 +1326,18 @@ function startBoom() {
   S.phase = 'boom'; S.boomT = 0; S.finalT = 0; setUI(); boomSound();
 }
 
-/* --- canción de Pingu: usa cancion.mp3 si existe; si no, cajita de música --- */
-let songTimer = null, lyricTimer = null, songAnalyser = null, songSource = null, songBuf = null;
+/* --- canción de Pingu: En Tu Día completa, con la letra sincronizada --- */
+let songTimer = null, songAnalyser = null, songSource = null, songBuf = null;
+const LYRIC_LEAD = 2.0;
+function primeSong() {
+  try {
+    if (!songEl.getAttribute('src')) {
+      songEl.preload = 'auto';
+      songEl.src = '/cancion.mp3';
+      songEl.load();
+    }
+  } catch (_) {}
+}
 function ensureSongAnalyser() {
   if (!ac) return null;
   if (!songAnalyser) {
@@ -1061,8 +1345,8 @@ function ensureSongAnalyser() {
       songSource = ac.createMediaElementSource(songEl);
       songAnalyser = ac.createAnalyser();
       songAnalyser.fftSize = 512;
-      songAnalyser.smoothingTimeConstant = 0.35;
-      songBuf = new Uint8Array(songAnalyser.fftSize);
+      songAnalyser.smoothingTimeConstant = 0.3;
+      songBuf = new Uint8Array(songAnalyser.frequencyBinCount);
       songSource.connect(songAnalyser);
       songAnalyser.connect(ac.destination);
     } catch (err) {
@@ -1071,39 +1355,46 @@ function ensureSongAnalyser() {
   }
   return songAnalyser;
 }
+function showLyric(text) {
+  if (!text || lyricEl.textContent === text) return;
+  lyricEl.textContent = text;
+  lyricEl.style.opacity = '0'; void lyricEl.offsetWidth; lyricEl.style.opacity = '1';
+}
+function updateSongLyric(force) {
+  if (!tour || !tour.singing) return;
+  const lyrics = CONFIG.song.lyrics;
+  const dur = (isFinite(songEl.duration) && songEl.duration > 20) ? songEl.duration : 141.3;
+  const usable = Math.max(1, dur - LYRIC_LEAD - 3.0);
+  const t = (songEl.paused || songEl.readyState < 2) ? (S.T - tour.songAt) : songEl.currentTime;
+  const idx = clamp(Math.floor((t - LYRIC_LEAD) / (usable / lyrics.length)), 0, lyrics.length - 1);
+  if (force || idx !== tour.songIdx) { tour.songIdx = idx; showLyric(lyrics[idx]); }
+}
 function startSong() {
   if (!tour || tour.state !== 'dwell' || tour.singing) return;
   const stop = CONFIG.stops[tour.stop];
   if (!stop.song) return;
-  tour.singing = true; tour.pose = 'sing';
+  tour.singing = true; tour.pose = 'sing'; tour.songIdx = -1; tour.songAt = S.T;
   hideBubble(); songUI.classList.add('show'); lyricEl.textContent = '';
   setTimeout(() => $('#songStop').focus(), 60);
-  const lyrics = CONFIG.song.lyrics;
-  let li = 0;
-  const step = () => {
-    if (!tour || !tour.singing) return;
-    lyricEl.textContent = lyrics[li % lyrics.length];
-    lyricEl.style.opacity = '0'; void lyricEl.offsetWidth; lyricEl.style.opacity = '1';
-    li++; lyricTimer = setTimeout(step, 3600);
-  };
-  step();
-  songTimer = setTimeout(() => stopSong(true), Math.max(12000, lyrics.length * 3600 + 1600));
-  ensureSongAnalyser();
+  primeSong(); ensureSongAnalyser();
   try {
-    songEl.src = '/cancion.mp3';
     songEl.currentTime = 0;
-    songEl.volume = 0.95;
+    songEl.volume = 0.9;
     songEl.muted = muted;
+    songEl.playbackRate = 1;
     const p = songEl.play();
     if (p && p.catch) p.catch(() => {});
   } catch (_) {}
+  clearTimeout(songTimer);
+  songTimer = setTimeout(() => stopSong(true), 146000);
+  updateSongLyric(true);
 }
 function stopSong(prompt) {
   const was = !!(tour && tour.singing);
-  if (tour) tour.singing = false;
-  clearTimeout(songTimer); clearTimeout(lyricTimer); songTimer = lyricTimer = null;
+  if (tour) { tour.singing = false; tour.songIdx = -1; }
+  clearTimeout(songTimer); songTimer = null;
   songUI.classList.remove('show');
-  try { songEl.pause(); } catch (_) {}
+  try { songEl.pause(); songEl.playbackRate = 1; } catch (_) {}
   musicOn = true;
   if (prompt && was) afterSong();
 }
@@ -1121,9 +1412,13 @@ songEl.addEventListener('playing', () => {
   if (!tour || !tour.singing) return;
   musicOn = false;
   clearTimeout(songTimer);
-  songTimer = setTimeout(() => stopSong(true), Math.max(12000, ((songEl.duration || 180) + 1) * 1000));
+  const dur = isFinite(songEl.duration) && songEl.duration > 0 ? songEl.duration : 144;
+  songTimer = setTimeout(() => stopSong(true), (dur + 2.5) * 1000);
 });
 songEl.addEventListener('ended', () => { if (tour && tour.singing) stopSong(true); });
+songEl.addEventListener('error', () => {
+  if (tour && tour.singing) setTimeout(() => { if (tour && tour.singing) stopSong(true); }, 900);
+});
 
 function resetAll() {
   stopSong(false); closeLetter(true); hideBubble(); tour = null; intro = null; introStarted = false;
@@ -1340,23 +1635,29 @@ function frame(ts) {
   U.uTime.value = T; U.uGalTime.value = S.galT; U.uForm.value = S.form; U.uBoom.value = S.boom;
   U.uProg.value = S.prog; U.uScanY.value = Math.sin(T * 1.5) * 17.5;
   const ph = (T * 1.15) % 1, beat = 1 + 0.1 * Math.exp(-ph * 6) + 0.05 * Math.exp(-Math.abs(ph - 0.3) * 16);
-  U_HEART.uBeat.value = beat; U_HEART.uYaw.value = Math.sin(T * 0.5) * 0.5;
+  U_HEART.uBeat.value = beat; U_HEART.uYaw.value = Math.sin(T * 0.42) * 0.72;
   const vis = smooth(0.6, 1, S.form) * (1 - S.boom);
+  const galVis = smooth(0.3, 0.92, S.form) * (1 - S.boom);
   heartGlow.scale.set(30 * beat, 30 * beat, 1); heartGlow.material.opacity = heartGlow.userData.base * vis;
-  coreGlow.material.opacity = coreGlow.userData.base * vis;
+  coreGlow.scale.setScalar(90 * (1 + 0.035 * Math.sin(T * 0.7) + 0.06 * (beat - 1)));
+  coreGlow.material.opacity = coreGlow.userData.base * vis * (0.85 + 0.15 * Math.sin(T * 0.55));
+  coreHalo.scale.setScalar(150 * (1 + 0.025 * Math.sin(T * 0.42) + 0.04 * (beat - 1)));
+  coreHalo.material.opacity = coreHalo.userData.base * vis * (0.7 + 0.3 * Math.sin(T * 0.31 + 1.2));
   pinkLight.intensity = (1.1 + (beat - 1) * 6) * vis;
+  bgStars.rotation.y = T * 0.005;
+  bgStars.rotation.z = Math.sin(T * 0.017) * 0.06;
 
   /* --- frases y fotos --- */
   const sv = smooth(0.7, 0.95, S.form) * (1 - S.boom), nP = phraseSprites.length;
   const phraseDim = S.phase === 'intro' ? 0.28 : 1;
   phraseSprites.forEach((s, i) => {
-    const a = i / nP * TAU + T * 0.1, r = 30;
+    const a = i / nP * TAU + T * 0.14, r = 30;
     s.position.set(Math.cos(a) * r, Math.sin(a * 3 + i) * 2.4 + Math.cos(a) * 2.2, Math.sin(a) * r);
     s.material.opacity = clamp(1.25 - s.position.distanceTo(camera.position) / 105, 0.3, 1) * sv * phraseDim;
   });
   photoSprites.forEach((s, i) => {
     if (!photos.length) { s.material.opacity = 0; return; }
-    const a = -(i / photoSprites.length * TAU) + T * 0.08, r = 19;
+    const a = -(i / photoSprites.length * TAU) + T * 0.11, r = 19;
     s.position.set(Math.cos(a) * r, Math.sin(a * 2) * 1.4, Math.sin(a) * r);
     s.material.rotation = Math.sin(T * 0.8 + i * 1.7) * 0.07;
     s.material.opacity = clamp(1.25 - s.position.distanceTo(camera.position) / 90, 0.35, 1) * sv;
@@ -1388,11 +1689,16 @@ function frame(ts) {
     if (tour) tour.w = lerp(tour.w, tour.state === 'dwell' ? 1 : 0, damp(2.2, dt));
   }
   if (singing && songAnalyser && songBuf) {
-    songAnalyser.getByteTimeDomainData(songBuf);
+    /* el pico sigue la banda de la voz, no los graves de la música */
+    songAnalyser.getByteFrequencyData(songBuf);
+    const binHz = (ac ? ac.sampleRate : 48000) / songAnalyser.fftSize;
+    const lo = Math.max(1, Math.floor(220 / binHz)), hi = Math.min(songBuf.length - 1, Math.ceil(4200 / binHz));
     let sum = 0;
-    for (let i = 0; i < songBuf.length; i++) { const v = (songBuf[i] - 128) / 128; sum += v * v; }
-    songLevel = clamp((Math.sqrt(sum / songBuf.length) - 0.012) * 6.5, 0, 1);
+    for (let i = lo; i <= hi; i++) sum += songBuf[i];
+    const avg = sum / Math.max(1, hi - lo + 1) / 255;
+    songLevel = clamp((avg - 0.1) * 1.55, 0, 0.9);
   }
+  if (tour && tour.singing) updateSongLyric();
   const showOtter = S.otterVis > 0.005;
   root.visible = showOtter;
   if (showOtter) {
@@ -1423,6 +1729,7 @@ function frame(ts) {
     trail.update(dt, root.position, 0);
     guideKey.intensity = guideRim.intensity = 0;
   }
+  updateNotes(T, !!(tour && tour.singing));
 
   /* --- cámara --- */
   let desPos = V.c, desLook = V.b.set(0, 0, 0), camRate = 2.4;
@@ -1445,8 +1752,21 @@ function frame(ts) {
     desPos.copy(OVERVIEW);
     camRate = S.phase === 'boom' ? 1.8 : 0.9;
   }
+  if (S.phase !== 'scan') {
+    const amp = S.phase === 'tour' ? 0.75 : 1;
+    desPos.x += (Math.sin(T * 0.23) * 0.45 + pointer.x * 0.65) * amp;
+    desPos.y += (Math.sin(T * 0.31 + 1.4) * 0.25 - pointer.y * 0.4) * amp;
+    desLook.x += (Math.sin(T * 0.17 + 0.6) * 0.25 + pointer.x * 0.4) * amp;
+    desLook.y += (Math.sin(T * 0.21 + 2.1) * 0.12 - pointer.y * 0.25) * amp;
+  }
+  if (S.phase === 'boom') {
+    const sh = S.boom * (1 - S.boom * 0.4);
+    desPos.x += Math.sin(T * 41) * 1.1 * sh;
+    desPos.y += Math.cos(T * 37) * 0.8 * sh;
+  }
   cam.pos.lerp(desPos, damp(camRate, dt)); cam.look.lerp(desLook, damp(camRate + 0.6, dt));
   camera.position.copy(cam.pos); camera.lookAt(cam.look);
+  updateGalaxyFX(dt, T, galVis);
   guideFill.position.copy(camera.position); guideFill.position.y += 1.4;
   guideFill.intensity = 0.28 * S.otterVis;
 
@@ -1501,6 +1821,7 @@ window.__pinguino = {
   song() { startSong(); },
   endSong() { stopSong(true); },
   boom() { stopSong(false); closeLetter(true); finishTour(); },
+  fx() { return { comets: comets.map(c => ({ active: c.active, wait: +c.wait.toFixed(2), t: +c.t.toFixed(2) })), notes: noteSprites.map(s => +s.material.opacity.toFixed(2)), dust: +dustMat.uniforms.uFx.value.toFixed(2), nebulas: nebulas.length, fireflies: fireflies.length, halo: +coreHalo.material.opacity.toFixed(3) }; },
   info() { return { phase: S.phase, form: +S.form.toFixed(2), boom: +S.boom.toFixed(2), final: +S.finalT.toFixed(2), prog: +S.prog.toFixed(2), mouth: +(otter.state.mouth || 0).toFixed(2), analyser: !!songAnalyser, pos: otter.root.position.toArray().map(v => +v.toFixed(1)), intro: intro && { msg: intro.msg, started: intro.started }, tour: tour && { seg: tour.seg, state: tour.state, stop: tour.stop, singing: tour.singing, songDone: tour.songDone } }; }
 };
 })();
