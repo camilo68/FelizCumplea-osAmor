@@ -167,12 +167,11 @@ body.show-brand #brand{opacity:1;transform:none}
 }
 .letterKicker{text-align:center;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#b4547c;margin-bottom:4px}
 .letter h2{font-family:var(--font-script);font-weight:700;font-size:2.75rem;text-align:center;margin-bottom:12px;color:#8e1f4b;text-shadow:0 1px 0 rgba(255,255,255,.8)}
-#lText{white-space:pre-line;line-height:1.78;font-size:16.5px;text-align:left;text-wrap:pretty;min-height:7em;padding:0 8px;color:#4a1b36;outline:none;user-select:text;-webkit-user-select:text}
+#lText{white-space:pre-line;line-height:1.78;font-size:16.5px;text-align:left;text-wrap:pretty;min-height:7em;padding:0 8px;color:#4a1b36;user-select:text;-webkit-user-select:text}
 .sign{margin-top:18px;text-align:right;font-family:var(--font-script);font-size:1.9rem;line-height:1.05;color:#8e1f4b}
 .sign span{display:block;font-size:2.3rem}
 .letterActions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;position:sticky;bottom:0;z-index:3;margin:16px -30px -26px;padding:12px 30px 20px;background:linear-gradient(transparent,#ffe2ee 26%);border-radius:0 0 20px 20px}
 .letterActions .pill{font-size:14px;min-height:42px}
-.letter small{display:block;margin-top:14px;text-align:center;color:#a26884;opacity:.8;font-size:12px}
 #close{position:absolute;top:10px;right:10px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(142,31,75,.1);color:#8e1f4b;font-size:16px}
 #close:hover{background:rgba(142,31,75,.18)}
 @media (max-width:520px){
@@ -202,7 +201,6 @@ body.show-brand #brand{opacity:1;transform:none}
   .sign span{font-size:2rem}
   .letterActions{margin:14px -20px -20px;padding:10px 20px 16px;border-radius:0 0 16px 16px}
   .letterActions .pill{font-size:13px;min-height:42px;padding:0 11px}
-  .letter small{margin-top:10px}
   #close{top:8px;right:8px;width:40px;height:40px}
 }
 @media (max-height:700px){
@@ -254,7 +252,6 @@ body.show-brand #brand{opacity:1;transform:none}
 </div>
 
 <div id="bar">
-  <button class="chip" id="skip" type="button" hidden>Saltar recorrido</button>
   <button class="chip" id="again" type="button" hidden>↻ Volver a empezar</button>
   <button class="chip" id="mail" type="button" hidden>💌 Carta</button>
   <label class="chip" id="photoBtn" for="file" hidden>📷 Fotos de la galaxia</label>
@@ -267,9 +264,8 @@ body.show-brand #brand{opacity:1;transform:none}
     <div class="seal" aria-hidden="true">♥</div>
     <p class="letterKicker">Del otro lado de las estrellas</p>
     <h2 id="lTitle"></h2>
-    <p id="lText" contenteditable="true" spellcheck="false"></p>
+    <p id="lText"></p>
     <p class="sign">Con todo mi amor,<span>Camilo</span></p>
-    <small>Toca el texto para escribir tu propio mensaje</small>
     <div class="letterActions">
       <button class="pill ghost" id="againLetter" type="button">↻ Desde el inicio</button>
       <button class="pill" id="closeLetter" type="button">Cerrar y ver la galaxia</button>
@@ -291,9 +287,12 @@ const CONFIG = {
   scanTitle: 'Pon tu dedo para entrar',
   caption: 'Mi Mamacita Hermosa, esto es todo para ti. 💗',
   phrases: [
-    'Papá piensa en ti', 'Te amo hasta las estrellas', 'Contigo todo brilla', 'Mi corazón es tuyo',
-    'Eres mi lugar favorito', 'Nuestro amor es infinito', 'Te elegiría en todas las galaxias',
-    'De papá, con todo su amor', 'Eres su razón de sonreír', 'Siempre tú', 'Mi estrella favorita', 'Amarte es poesía'
+    'Papá piensa en ti 💗', 'Te amo hasta las estrellas ✨', 'Contigo todo brilla 🌟', 'Mi corazón es tuyo 💘',
+    'Eres mi lugar favorito 🏡', 'Nuestro amor es infinito ♾️', 'Te elegiría en todas las galaxias 🌌',
+    'De papá, con todo su amor 💌', 'Eres su razón de sonreír 😊', 'Siempre tú 🌙', 'Mi estrella favorita ⭐',
+    'Amarte es poesía 📖', 'Feliz cumpleaños, mamá 🎂', 'Que nunca te falte una sonrisa 😍',
+    'Eres mi milagro favorito 🕊️', 'Tus abrazos son mi hogar 🤍', 'Te admiro más de lo que imaginas 🌺',
+    'Gracias por existir, mamá 🙏', 'Mi universo cabe en tus ojos 👀', 'De papá, para siempre 💞'
   ],
   stops: [
     { say: ['¡Hola, mamá! 🐧 Soy Pingu.', 'Papá me envió a decirte lo que a él se le dificulta decir con palabras.', 'Nací de tu huella y de su cariño. Ven, te muestro su regalo. ✨'], pose: 'wave' },
@@ -791,12 +790,13 @@ function updateNotes(T, on) {
 
 /* ---------------- frases y fotos en órbita ---------------- */
 const phraseSprites = [];
+const PHRASE_FONT = '600 64px Fredoka, "Segoe UI", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", system-ui, sans-serif';
 function drawPhrase(c, text) {
   const x = c.getContext('2d');
-  x.font = '600 64px Fredoka, "Segoe UI", system-ui, sans-serif';
+  x.font = PHRASE_FONT;
   const w = Math.ceil(x.measureText(text).width) + 80;
   c.width = w; c.height = 120;
-  x.font = '600 64px Fredoka, "Segoe UI", system-ui, sans-serif';
+  x.font = PHRASE_FONT;
   x.textAlign = 'center'; x.textBaseline = 'middle';
   x.shadowColor = 'rgba(255,90,160,.95)'; x.shadowBlur = 22; x.fillStyle = '#fff';
   x.fillText(text, w / 2, 62); x.fillText(text, w / 2, 62);
@@ -1256,7 +1256,6 @@ function setUI() {
   const singing = !!(tour && tour.singing);
   const k = [!!tour, ready, EDIT, singing].join();
   if (k === uiKey) return; uiKey = k;
-  $('#skip').hidden = !tour || singing;
   $('#again').hidden = !ready;
   $('#mail').hidden = !ready;
   $('#photoBtn').hidden = !EDIT;
@@ -1449,7 +1448,6 @@ letterBtn.addEventListener('click', () => {
   if (tour && tour.state === 'dwell' && CONFIG.stops[tour.stop].letter) finishTour();
   else openLetter();
 });
-$('#skip').addEventListener('click', () => { closeLetter(true); finishTour(); });
 $('#again').addEventListener('click', resetAll);
 $('#mail').addEventListener('click', openLetter);
 $('#againLetter').addEventListener('click', resetAll);
@@ -1664,9 +1662,12 @@ function frame(ts) {
   /* --- frases y fotos --- */
   const sv = smooth(0.7, 0.95, S.form) * (1 - S.boom), nP = phraseSprites.length;
   const phraseDim = S.phase === 'intro' ? 0.28 : 1;
+  const perRing = Math.ceil(nP / 2);
   phraseSprites.forEach((s, i) => {
-    const a = i / nP * TAU + T * 0.14, r = 30;
-    s.position.set(Math.cos(a) * r, Math.sin(a * 3 + i) * 2.4 + Math.cos(a) * 2.2, Math.sin(a) * r);
+    const outer = i % 2 === 1;
+    const a = Math.floor(i / 2) / perRing * TAU + (outer ? 0.055 : 0) + T * (outer ? -0.1 : 0.14);
+    const r = outer ? 36 : 29;
+    s.position.set(Math.cos(a) * r, Math.sin(a * 3 + i) * 2.4 + (outer ? 2.6 : -0.6), Math.sin(a) * r);
     s.material.opacity = clamp(1.25 - s.position.distanceTo(camera.position) / 105, 0.3, 1) * sv * phraseDim;
   });
   photoSprites.forEach((s, i) => {
