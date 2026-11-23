@@ -127,9 +127,9 @@ body.show-brand #brand{opacity:1;transform:none}
 }
 #serenade.show{opacity:1;visibility:visible;transform:translate(-50%,0) scale(1)}
 #serenade .songWho{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#ffc2dd;text-shadow:0 1px 10px rgba(0,0,0,.6)}
-#lyricLine{
-  font-family:var(--font-script);font-weight:700;font-size:clamp(1.5rem,5.6vw,2.45rem);line-height:1.22;min-height:2.44em;margin:6px 0 12px;
-  color:#fff;text-shadow:0 0 18px rgba(255,77,141,.95),0 0 44px rgba(255,77,141,.55);transition:opacity .3s;
+#songLine{
+  font-family:var(--font-script);font-weight:700;font-size:clamp(1.35rem,5.2vw,2.1rem);line-height:1.25;min-height:2.5em;margin:6px 0 12px;
+  color:#fff;text-shadow:0 0 18px rgba(255,77,141,.95),0 0 44px rgba(255,77,141,.55);transition:opacity .3s;text-wrap:balance;
 }
 #songBars{display:flex;justify-content:center;align-items:flex-end;gap:4px;height:22px;margin-bottom:10px}
 #songBars i{display:block;width:4px;border-radius:3px;background:linear-gradient(#ff8ab8,#9b6bff);animation:bars .9s ease-in-out infinite;opacity:.85}
@@ -167,24 +167,53 @@ body.show-brand #brand{opacity:1;transform:none}
 }
 .letterKicker{text-align:center;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#b4547c;margin-bottom:4px}
 .letter h2{font-family:var(--font-script);font-weight:700;font-size:2.75rem;text-align:center;margin-bottom:12px;color:#8e1f4b;text-shadow:0 1px 0 rgba(255,255,255,.8)}
-#lText{white-space:pre-line;line-height:1.75;font-size:17px;text-align:center;min-height:7em;padding:0 6px;color:#4a1b36;outline:none;user-select:text;-webkit-user-select:text}
+#lText{white-space:pre-line;line-height:1.78;font-size:16.5px;text-align:left;text-wrap:pretty;min-height:7em;padding:0 8px;color:#4a1b36;outline:none;user-select:text;-webkit-user-select:text}
 .sign{margin-top:18px;text-align:right;font-family:var(--font-script);font-size:1.9rem;line-height:1.05;color:#8e1f4b}
 .sign span{display:block;font-size:2.3rem}
-.letterActions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:20px}
+.letterActions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;position:sticky;bottom:0;z-index:3;margin:16px -30px -26px;padding:12px 30px 20px;background:linear-gradient(transparent,#ffe2ee 26%);border-radius:0 0 20px 20px}
 .letterActions .pill{font-size:14px;min-height:42px}
 .letter small{display:block;margin-top:14px;text-align:center;color:#a26884;opacity:.8;font-size:12px}
 #close{position:absolute;top:10px;right:10px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(142,31,75,.1);color:#8e1f4b;font-size:16px}
 #close:hover{background:rgba(142,31,75,.18)}
 @media (max-width:520px){
   #brand{font-size:clamp(1.7rem,7vw,2.6rem);padding-inline:54px;line-height:1.08}
-  .letter{padding:58px 23px 22px;border-radius:18px}
-  .letter .seal{top:10px;width:40px;height:40px;font-size:17px}
-  .letter h2{font-size:2.35rem;margin-bottom:8px}
-  #lText{font-size:16px;line-height:1.65;min-height:5em}
+  #mute{top:calc(env(safe-area-inset-top,0px) + 10px);right:max(10px,env(safe-area-inset-right,0px));width:44px;height:44px;font-size:16px}
+  #bar{left:max(10px,env(safe-area-inset-left,0px));right:max(10px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 10px);gap:6px}
+  #bar .chip{flex:1 1 auto;min-width:0;padding:0 10px;font-size:12.5px;gap:5px}
+  #bubble{width:calc(100vw - 22px);padding:12px 15px;border-radius:18px}
+  #bubble .who{font-size:11px;margin-bottom:4px}
+  #bubble p{font-size:16.5px;line-height:1.4;min-height:2.8em}
+  #bubble .row{margin-top:8px;min-height:40px}
+  .pill{font-size:14px;padding:0 13px}
+  #scanTitle{font-size:clamp(1.85rem,8vw,2.8rem);padding-inline:18px;top:calc(env(safe-area-inset-top,0px) + 20px)}
+  #scanHint{font-size:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);padding-inline:18px}
+  #scanHint small{font-size:12.5px}
+  #serenade{width:calc(100vw - 22px);top:calc(env(safe-area-inset-top,0px) + 58px);padding:12px 14px 10px;border-radius:18px}
+  #serenade .songWho{font-size:10px;letter-spacing:.09em}
+  #songLine{font-size:clamp(1.25rem,6vw,1.7rem);min-height:2.3em;margin:5px 0 9px}
+  #songBars{height:16px;margin-bottom:8px}
+  #caption{font-size:clamp(1.4rem,6.2vw,2rem);bottom:calc(env(safe-area-inset-bottom,0px) + 74px)}
+  #modal{padding:12px}
+  .letter{padding:56px 20px 20px;border-radius:16px;max-height:calc(100dvh - 24px)}
+  .letter .seal{top:10px;width:38px;height:38px;font-size:16px}
+  .letter h2{font-size:2.2rem;margin-bottom:8px}
+  #lText{font-size:15.5px;line-height:1.72;min-height:5em;padding:0 2px}
   .sign{font-size:1.7rem;margin-top:14px}
   .sign span{font-size:2rem}
-  .letterActions{margin-top:14px}
+  .letterActions{margin:14px -20px -20px;padding:10px 20px 16px;border-radius:0 0 16px 16px}
+  .letterActions .pill{font-size:13px;min-height:42px;padding:0 11px}
   .letter small{margin-top:10px}
+  #close{top:8px;right:8px;width:40px;height:40px}
+}
+@media (max-height:700px){
+  #serenade{top:calc(env(safe-area-inset-top,0px) + 44px);padding-top:9px;padding-bottom:8px}
+  #songLine{min-height:1.9em;font-size:clamp(1.15rem,5vw,1.5rem)}
+  #songBars{height:12px}
+  .letter{padding-top:50px}
+  .letter h2{font-size:1.95rem}
+  #lText{font-size:14.5px;line-height:1.6}
+  #scanTitle{top:calc(env(safe-area-inset-top,0px) + 12px)}
+  #scanHint{bottom:calc(env(safe-area-inset-bottom,0px) + 14px)}
 }
 </style>
 
@@ -218,8 +247,8 @@ body.show-brand #brand{opacity:1;transform:none}
 <div id="flash"></div>
 
 <div id="serenade" aria-live="polite">
-  <p class="songWho">Pingu te canta · En Tu Día</p>
-  <p id="lyricLine"></p>
+  <p class="songWho">De papá para mamá · Pingu te canta 🎂</p>
+  <p id="songLine"></p>
   <div id="songBars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
   <button class="pill" id="songStop" type="button">Saltar canción ›</button>
 </div>
@@ -240,11 +269,11 @@ body.show-brand #brand{opacity:1;transform:none}
     <h2 id="lTitle"></h2>
     <p id="lText" contenteditable="true" spellcheck="false"></p>
     <p class="sign">Con todo mi amor,<span>Camilo</span></p>
+    <small>Toca el texto para escribir tu propio mensaje</small>
     <div class="letterActions">
       <button class="pill ghost" id="againLetter" type="button">↻ Desde el inicio</button>
       <button class="pill" id="closeLetter" type="button">Cerrar y ver la galaxia</button>
     </div>
-    <small>Toca el texto para escribir tu propio mensaje</small>
   </div>
 </div>
 
@@ -262,53 +291,38 @@ const CONFIG = {
   scanTitle: 'Pon tu dedo para entrar',
   caption: 'Mi Mamacita Hermosa, esto es todo para ti. 💗',
   phrases: [
-    'Eres mi universo', 'Te amo hasta las estrellas', 'Contigo todo brilla', 'Mi corazón es tuyo',
+    'Papá piensa en ti', 'Te amo hasta las estrellas', 'Contigo todo brilla', 'Mi corazón es tuyo',
     'Eres mi lugar favorito', 'Nuestro amor es infinito', 'Te elegiría en todas las galaxias',
-    'Gracias por existir', 'Eres mi razón de sonreír', 'Siempre tú', 'Mi estrella favorita', 'Amarte es fácil'
+    'De papá, con todo su amor', 'Eres su razón de sonreír', 'Siempre tú', 'Mi estrella favorita', 'Amarte es poesía'
   ],
   stops: [
-    { say: ['¡Hola, mi Mamacita Hermosa! 🐧', 'Soy Pingu. Nací de tu huella, así que esta galaxia es toda tuya.', 'Cuando quieras, te llevo a pasear por ella. ✨'], pose: 'wave' },
-    { say: ['Estas estrellas giran despacio, brazo por brazo.', 'Cada una es un momento tuyo que guardo conmigo.'] },
-    { say: ['Mira cómo flotan las frases a nuestro alrededor.', 'Son todos los “te amo” que no caben en una sola vez.'] },
-    { say: ['Y aquí giran los recuerdos, como pequeñas lunas.', 'Cada recuerdo es una estrella más en este cielo.'] },
-    { say: ['En el centro de todo está el corazón de esta galaxia.', 'Late por ti, a cada segundo.'], pose: 'heart' },
+    { say: ['¡Hola, mamá! 🐧 Soy Pingu.', 'Papá me envió a decirte lo que a él se le dificulta decir con palabras.', 'Nací de tu huella y de su cariño. Ven, te muestro su regalo. ✨'], pose: 'wave' },
+    { say: ['Mamá, papá dice que tus estrellas no brillan: te miran con tus ojos.', 'Y que cada una guarda un “te quiero” que él no supo decir en voz alta.'] },
+    { say: ['Aquí flotan las palabras que papá me pidió traerte, mamá.', 'Dice que si el amor fuera idioma, solo sabría decir tu nombre.'] },
+    { say: ['Mira, mamá: hasta los recuerdos tienen órbita.', 'Papá dice que todos giran alrededor de lo mismo: de ti.'] },
+    { say: ['Este corazón late con tu nombre, mamá.', 'Papá dice que aunque cambie la galaxia, su centro siempre serás tú. 💗'], pose: 'heart' },
     {
-      say: ['Antes de irme, traje algo para ti.', 'Una carta escrita con todo el cariño del universo. 💌', 'Pero antes… quiero cantarte algo. 🎵'],
+      say: ['Mamá, papá me pidió que antes de darte su carta te cantara algo.', 'Es la canción que él guardó para tu día. 🎵', 'Cierra los ojos un instante… esta serenata te la manda papá. 💌'],
       pose: 'present', song: true, letter: true,
-      postSong: 'Y ahora sí… mi carta es toda tuya. Ábrela. 💌'
+      postSong: 'Y ahora sí, mamá… la carta de papá es toda tuya. Ábrela. 💌'
     }
   ],
   letterTitle: 'Para Karen',
-  letter: 'Mi Mamacita Hermosa:\n\nSi pudiera elegir un lugar en todo el universo, elegiría el que ocupas en mi vida. Gracias por cada mensaje, cada risa y cada momento que guardamos, incluso a la distancia.\n\nHoy celebro que existes, que iluminas todo a tu paso y que haces que hasta las galaxias se vean pequeñas. Te amo hoy, mañana y en todas las vidas que nos queden por vivir. 💗',
-  /* Para usar la canción elegida, coloca el archivo en public/cancion.mp3.
-     Si no existe, Pingu canta sobre la cajita de música romántica. */
+  letter: 'Mamacita hermosa:\n\nJamás imaginé que llegaría a mi mundo una persona tan maravillosa como tú. Pero aquí estás, iluminando mis días con tu sonrisa y llenando mis noches con la paz de tu presencia. Eres la historia más hermosa que la vida ha escrito en mi destino, la casualidad convertida en milagro, el suspiro que nunca supe que necesitaba.\n\nSi pudiera elegir un lugar en todo el universo, elegiría el que ocupas en mi vida. Gracias por cada mensaje, cada risa y cada momento que guardamos, incluso a la distancia. A tu lado, el tiempo se vuelve efímero, y cada instante contigo se graba en mi alma como un recuerdo eterno. No sé qué hice para merecerte, pero cada día me esfuerzo en demostrarte que mi amor por ti es infinito.\n\nHoy celebro que existes, que iluminas todo a tu paso y que haces que hasta las galaxias se vean pequeñas. Porque en tu mirada encontré el universo, en tu voz la melodía que calma mis miedos y en tu amor la certeza de que algunos sueños sí se hacen realidad.\n\nTe amo hoy, mañana y en todas las vidas que nos queden por vivir. 💗',
+  /* La canción suena de fondo; en pantalla los mensajes de cumpleaños que papá me pidió traerte. */
   song: {
-    title: 'En Tu Día · Para ti, Karen 🎵',
-    lyrics: [
-      'Celebremos con gusto, señores,',
-      'este día de placer tan dichoso,',
-      'que en tu santo te encuentres gustoso',
-      'y tranquilo tu fiel corazón.',
-      'Vive, vive feliz en el mundo,',
-      'sin que nadie perturbe tu mente;',
-      'te pondremos un laurel en tu frente,',
-      'unas conchas y perlas del mar.',
-      'Dios bendiga este día venturoso',
-      'y bendiga la prenda que adoro;',
-      'hoy los ángeles cantan en coro',
-      'por los años que vas a cumplir.',
-      'Las estrellas se visten de gala',
-      'y la luna se llena de encanto',
-      'al saber que hoy es día de tu santo;',
-      'Dios bendiga este día de placer.',
-      'Solamente un recuerdo ha quedado',
-      'de la infancia que al fin ya pasó;',
-      'celebremos este día tan dichoso,',
-      'tus amigos, parientes y yo.',
-      'Celebremos con gusto, señores,',
-      'este día de placer tan dichoso,',
-      'que en tu santo te encuentres gustoso',
-      'y tranquilo tu fiel corazón.'
+    title: 'En Tu Día · De papá para ti 🎵',
+    messages: [
+      '¡Feliz cumpleaños, mamá! 🎂',
+      'Papá dice que hoy el universo celebra que naciste.',
+      'Quiere que tus estrellas te canten lo mucho que te admira.',
+      'Mamá, tu sonrisa es su constelación favorita.',
+      'Desea que este día te devuelva todo lo que nos das.',
+      'Años largos, sueños cumplidos y abrazos infinitos.',
+      'Te da las gracias por ser su mundo y su milagro.',
+      'En tu mirada caben todas las galaxias.',
+      'Te quiere más allá de cada estrella, mamá.',
+      'De papá: feliz cumpleaños, mamacita querida. 💗'
     ]
   }
 };
@@ -1229,7 +1243,7 @@ const pointer = { x: 0, y: 0 };
 let tour = null, intro = null, introStarted = false, heading = 0, yawRate = 0, speedNow = 0;
 
 const bubble = $('#bubble'), sayEl = $('#say'), nextBtn = $('#skipMsg'), letterBtn = $('#openLetter');
-const singBtn = $('#singBtn'), songUI = $('#serenade'), lyricEl = $('#lyricLine'), songEl = $('#song'), liveEl = $('#live');
+const singBtn = $('#singBtn'), songUI = $('#serenade'), songLineEl = $('#songLine'), songEl = $('#song'), liveEl = $('#live');
 const bub = { text: '', typed: 0, read: 0, show: false };
 let uiKey = '', autoLetterShown = false;
 
@@ -1326,9 +1340,9 @@ function startBoom() {
   S.phase = 'boom'; S.boomT = 0; S.finalT = 0; setUI(); boomSound();
 }
 
-/* --- canción de Pingu: En Tu Día completa, con la letra sincronizada --- */
+/* --- serenata de Pingu: suena En Tu Día y en pantalla mensajes de cumpleaños para mamá --- */
 let songTimer = null, songAnalyser = null, songSource = null, songBuf = null;
-const LYRIC_LEAD = 2.0;
+const SONG_LEAD = 2.0;
 function primeSong() {
   try {
     if (!songEl.getAttribute('src')) {
@@ -1355,26 +1369,26 @@ function ensureSongAnalyser() {
   }
   return songAnalyser;
 }
-function showLyric(text) {
-  if (!text || lyricEl.textContent === text) return;
-  lyricEl.textContent = text;
-  lyricEl.style.opacity = '0'; void lyricEl.offsetWidth; lyricEl.style.opacity = '1';
+function showSongMessage(text) {
+  if (!text || songLineEl.textContent === text) return;
+  songLineEl.textContent = text;
+  songLineEl.style.opacity = '0'; void songLineEl.offsetWidth; songLineEl.style.opacity = '1';
 }
-function updateSongLyric(force) {
+function updateSongMessage(force) {
   if (!tour || !tour.singing) return;
-  const lyrics = CONFIG.song.lyrics;
+  const messages = CONFIG.song.messages;
   const dur = (isFinite(songEl.duration) && songEl.duration > 20) ? songEl.duration : 141.3;
-  const usable = Math.max(1, dur - LYRIC_LEAD - 3.0);
+  const usable = Math.max(1, dur - SONG_LEAD - 3.0);
   const t = (songEl.paused || songEl.readyState < 2) ? (S.T - tour.songAt) : songEl.currentTime;
-  const idx = clamp(Math.floor((t - LYRIC_LEAD) / (usable / lyrics.length)), 0, lyrics.length - 1);
-  if (force || idx !== tour.songIdx) { tour.songIdx = idx; showLyric(lyrics[idx]); }
+  const idx = clamp(Math.floor((t - SONG_LEAD) / (usable / messages.length)), 0, messages.length - 1);
+  if (force || idx !== tour.songIdx) { tour.songIdx = idx; showSongMessage(messages[idx]); }
 }
 function startSong() {
   if (!tour || tour.state !== 'dwell' || tour.singing) return;
   const stop = CONFIG.stops[tour.stop];
   if (!stop.song) return;
   tour.singing = true; tour.pose = 'sing'; tour.songIdx = -1; tour.songAt = S.T;
-  hideBubble(); songUI.classList.add('show'); lyricEl.textContent = '';
+  hideBubble(); songUI.classList.add('show'); songLineEl.textContent = '';
   setTimeout(() => $('#songStop').focus(), 60);
   primeSong(); ensureSongAnalyser();
   try {
@@ -1387,7 +1401,7 @@ function startSong() {
   } catch (_) {}
   clearTimeout(songTimer);
   songTimer = setTimeout(() => stopSong(true), 146000);
-  updateSongLyric(true);
+  updateSongMessage(true);
 }
 function stopSong(prompt) {
   const was = !!(tour && tour.singing);
@@ -1483,7 +1497,7 @@ addEventListener('pointermove', e => { pointer.x = (e.clientX / innerWidth - 0.5
 
 function recognized() {
   S.phase = 'form'; S.formT = 0; setHold(false); musicOn = true; tick = 0;
-  setHint('Huella reconocida, Mi Mamacita Hermosa 🥰<small>Tu galaxia está naciendo…</small>');
+  setHint('Huella reconocida, mamá 🥰<small>Tu galaxia está naciendo…</small>');
   setTimeout(() => $('#scan').classList.add('gone'), 1400);
   try { navigator.vibrate && navigator.vibrate([40, 70, 40]); } catch (_) {}
   riseChime();
@@ -1698,7 +1712,7 @@ function frame(ts) {
     const avg = sum / Math.max(1, hi - lo + 1) / 255;
     songLevel = clamp((avg - 0.1) * 1.55, 0, 0.9);
   }
-  if (tour && tour.singing) updateSongLyric();
+  if (tour && tour.singing) updateSongMessage();
   const showOtter = S.otterVis > 0.005;
   root.visible = showOtter;
   if (showOtter) {
@@ -1782,7 +1796,9 @@ function frame(ts) {
     const W = innerWidth, H = innerHeight, bw = bubble.offsetWidth, bh = bubble.offsetHeight;
     let x = (headW.x * 0.5 + 0.5) * W, y = (-headW.y * 0.5 + 0.5) * H;
     if (headW.z > 1) { x = W / 2; y = H - 90; }
-    const gut = 16 + bw / 2, lx = clamp(x, gut, W - gut), top = clamp(y, bh + 74, H - 18);
+    const gut = 12 + bw / 2, lx = clamp(x, gut, W - gut);
+    const bottomLimit = Math.max(150, H - 76);
+    const top = clamp(y, Math.min(bh + 24, bottomLimit - 8), bottomLimit);
     bubble.style.transform = `translate(${lx - bw / 2}px, ${top - bh - 12}px)`;
     bubble.style.setProperty('--tx', clamp(x - (lx - bw / 2), 24, bw - 24) + 'px');
   }
